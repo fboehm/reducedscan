@@ -10,7 +10,8 @@ Status](https://travis-ci.org/fboehm/reducedscan.svg?branch=master)](https://tra
 
 <!-- badges: end -->
 
-The goal of reducedscan is to …
+The goal of reducedscan is to determine true allelic series at a QTL and
+scan based on that series.
 
 ## Installation
 
