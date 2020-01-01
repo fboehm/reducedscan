@@ -1,0 +1,7 @@
+^reducedscan\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^LICENSE\.md$
+analysis
+^Dockerfile$
+^\.travis\.yml$
