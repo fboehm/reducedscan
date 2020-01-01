@@ -5,3 +5,4 @@
 analysis
 ^Dockerfile$
 ^\.travis\.yml$
+^\.github$

@@ -10,7 +10,11 @@ Status](https://travis-ci.org/fboehm/reducedscan.svg?branch=master)](https://tra
 
 <!-- badges: end -->
 
-The goal of reducedscan is to determine true allelic series at a QTL and
+Please note that the ‘reducedscan’ project is released with a
+[Contributor Code of Conduct](.github/CODE_OF_CONDUCT.md). By
+contributing to this project, you agree to abide by its terms.
+
+The goal of `reducedscan` is to determine allelic series at a QTL and
 scan based on that series.
 
 ## Installation
