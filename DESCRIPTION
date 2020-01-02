@@ -1,5 +1,5 @@
 Package: reducedscan
-Title: QTL scans with simpler statistical models
+Title: QTL Scans with Simpler Statistical Models in Multiparental Populations
 Version: 0.0.0.9000
 Authors@R:
     person(given = "Frederick",
@@ -7,7 +7,10 @@ Authors@R:
            role = c("aut", "cre"),
            email = "frederick.boehm@gmail.com",
            comment = c(ORCID = "0000-0002-1644-5931"))
-Description: We infer allelic series (number of alleles and mapping from founder lines to alleles, ie, which founders share alleles) and perform QTL scans with corresponding 'reduced' statistical models with one allele effect parameter per inferred allele.
+Description: We infer allelic series (number of alleles and mapping from 
+    founder lines to alleles, ie, which founders share alleles) and perform 
+    QTL scans with corresponding 'reduced' statistical models with one 
+    allele effect parameter per inferred allele.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -17,6 +20,6 @@ Suggests:
     devtools,
     git2r,
     testthat (>= 2.1.0),
-    qtl2
+    qtl2 (== 0.20.0)
 RoxygenNote: 6.1.1
 Additional_repositories: https://rqtl.org/qtl2cran    
