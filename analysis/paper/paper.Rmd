@@ -24,7 +24,7 @@ output:
 bibliography: references.bib
 csl: "../templates/journal-of-archaeological-science.csl" # Insert path for the bib-style
 abstract: |
-  Multiparental populations of mice, flies, and other model organisms incorporate more genetic diversity than traditional crosses and enable high-resolution QTL mapping. However, some QTL mapping experiments have yielded modest results, possibly due to limited statistical power to detect QTL. In multiparental populations, one typically infers, for each study subject, the founder from which each haplotype across the genome was inherited. One then performs traditional QTL mapping while allowing for distinct effects of all founder alleles. In practice, the allowance for distinct allele effects reduces power when, in fact, multiple founders share a single allele. We propose to first identify the allelic series of a known QTL, then use a corresponding reduced statistical model to detect QTL in a second 
+  Multiparental populations of mice, flies, and other model organisms incorporate more genetic diversity than traditional crosses and enable high-resolution QTL mapping. However, some QTL mapping experiments have yielded modest results, possibly due to limited statistical power to detect QTL. In multiparental populations, one typically infers, for each study subject, the founder from which each haplotype was inherited. One then performs traditional QTL mapping while allowing for distinct effects of all founder alleles. In practice, the allowance for distinct allele effects reduces power when, in fact, multiple founders share a single allele. We propose to first identify the allelic series of a known QTL, then use a corresponding reduced statistical model to detect QTL in a second cohort. 
 keywords: |
   quantitative trait locus; allelic series; keyword 3
 highlights: |
@@ -47,6 +47,8 @@ knitr::opts_chunk$set(
 ```
 
 # Introduction
+
+
 
 
 # Background
