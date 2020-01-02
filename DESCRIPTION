@@ -1,12 +1,12 @@
 Package: reducedscan
-Title: What the Package Does (One Line, Title Case)
+Title: QTL scans with simpler statistical models
 Version: 0.0.0.9000
 Authors@R:
-    person(given = "First",
-           family = "Last",
+    person(given = "Frederick",
+           family = "Boehm",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           email = "frederick.boehm@gmail.com",
+           comment = c(ORCID = "0000-0002-1644-5931"))
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -16,5 +16,7 @@ Imports: bookdown,
 Suggests: 
     devtools,
     git2r,
-    testthat (>= 2.1.0)
+    testthat (>= 2.1.0),
+    qtl2
 RoxygenNote: 6.1.1
+Additional_repositories: https://rqtl.org/qtl2cran    
