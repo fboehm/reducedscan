@@ -3,6 +3,7 @@
 #' @param probs a list containing founder allele probabilities for a collection of markers
 #' @param allelic_series a binary matrix of 0s and 1s indicating the allelic series
 #' @return an object with class calc_genoprob.
+#' @export
 #' @details The output has two classes: list and calc_genoprob. Class 'calc_genoprob' is needed for input to qtl2::scan1, for example. Output length is same as that of inputted allele probs object.
 reduce_probs <- function(probs, allelic_series){
   if (!is.list(probs)) stop("probs must be a list")
@@ -19,10 +20,13 @@ reduce_probs <- function(probs, allelic_series){
 #' @param allelic_series a matrix of 0s and 1s to indicate allelic series
 #' @return a reduced array
 #' @details The function multiplies every marker's probs matrix (from array inputted) by allelic_series and returns an array.
+#' @export
 reduce_probs_array <- function(array, allelic_series){
   out <- array(dim = c(dim(array)[[1]], ncol(allelic_series), dim(array)[[3]]))
   for (i in seq_along(1:(dim(array)[[3]]))){
     out[ , , i] <- array[ , , i] %*% allelic_series
   }
+  rownames(out) <- rownames(array)
+  dimnames(out)[[3]] <- dimnames(array)[[3]]
   return(out)
 }

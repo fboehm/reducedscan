@@ -1,0 +1,55 @@
+---
+title: "Simulations"
+author: "Frederick J. Boehm"
+date: "1/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r download-attie}
+fn <- "../data/raw_data/attie.Rdata"
+if (!file.exists(fn)){
+  download.file(url = "https://datadryad.org/stash/downloads/file_stream/63306", destfile = fn)
+}
+fng <- "../data/derived_data/attie_geno.rds"
+if (!file.exists(fng)){
+  load(fn)
+  saveRDS(genoprobs, file = fng)
+  saveRDS(map, "../data/derived_data/attie_map.rds")
+  saveRDS(K, "../data/derived_data/kinship.rds")
+} else {
+  genoprobs <- readRDS(fng)
+}
+```
+
+
+
+
+
+
+```{r sim1}
+allelic_series <- matrix(c(1, 0, 0,
+                           1, 0, 0,
+                           0, 1, 0,
+                           0, 1, 0,
+                           0, 1, 0,
+                           0, 0, 1,
+                           0, 0, 1,
+                           0, 0, 1 ),
+                         nrow = 8, byrow = TRUE
+                         )
+
+y <- reducedscan::sim1(aprobs = genoprobs$`1`[, , 100], allelic_series = allelic_series, allelic_effects = 1:3 / 2, error_variance = 1)
+ymat <- as.matrix(y, nrow = 500, ncol = 1)
+rownames(ymat) <- rownames(genoprobs$`1`[ , , 100])
+s1 <- qtl2::scan1(genoprobs = genoprobs, pheno = y, kinship = K, reml = TRUE)
+s1_collapsed <- qtl2::scan1(genoprobs = reducedscan::reduce_probs(genoprobs, allelic_series = allelic_series), pheno = y, kinship = K, reml = TRUE)
+```
+
+
+
+
+
