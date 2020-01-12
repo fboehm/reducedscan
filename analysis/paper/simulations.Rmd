@@ -20,10 +20,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r download-attie}
-fn <- "../data/raw_data/attie.Rdata"
-if (!file.exists(fn)){
-  download.file(url = "https://datadryad.org/stash/downloads/file_stream/63306", destfile = fn)
-}
+#fn <- "../data/raw_data/attie.Rdata"
+#if (!file.exists(fn)){
+#  download.file(url = "https://datadryad.org/stash/downloads/file_stream/63306", destfile = fn)
+#}
 fng <- "../data/derived_data/attie_geno.rds"
 if (!file.exists(fng)){
   load(fn)
