@@ -3,7 +3,17 @@ title: "Simulations"
 author: "Frederick J. Boehm"
 date: "1/12/2020"
 output: html_document
+params:
+  lastmod: !r lubridate::now()
 ---
+
+Last modified: `r params$lastmod`.
+
+```{r setup2, include=FALSE, dev="CairoPNG"}
+knitr::opts_chunk$set(dev="CairoPNG")
+```
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
