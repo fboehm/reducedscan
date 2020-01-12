@@ -19,9 +19,11 @@ if (!file.exists(fng)){
   load(fn)
   saveRDS(genoprobs, file = fng)
   saveRDS(map, "../data/derived_data/attie_map.rds")
-  saveRDS(K, "../data/derived_data/kinship.rds")
+  saveRDS(K, "../data/derived_data/attie_kinship.rds")
 } else {
   genoprobs <- readRDS(fng)
+  map <- readRDS("../data/derived_data/attie_map.rds")
+  K <- readRDS("../data/derived_data/attie_kinship.rds")
 }
 ```
 
@@ -41,14 +43,23 @@ allelic_series <- matrix(c(1, 0, 0,
                            0, 0, 1 ),
                          nrow = 8, byrow = TRUE
                          )
-
-y <- reducedscan::sim1(aprobs = genoprobs$`1`[, , 100], allelic_series = allelic_series, allelic_effects = 1:3 / 2, error_variance = 1)
-ymat <- as.matrix(y, nrow = 500, ncol = 1)
-rownames(ymat) <- rownames(genoprobs$`1`[ , , 100])
-s1 <- qtl2::scan1(genoprobs = genoprobs, pheno = y, kinship = K, reml = TRUE)
+set.seed(12-01-2020)
+y <- lapply(X = rep(1, 1000), FUN = function(x){reducedscan::sim1(aprobs = genoprobs$`1`[, , 100], allelic_series = allelic_series, allelic_effects = 1:3 / 2, error_variance = x)})
+ymat <- do.call("cbind", y)
+s1 <- qtl2::scan1(genoprobs = genoprobs, pheno = ymat, kinship = K, reml = TRUE)
 s1_collapsed <- qtl2::scan1(genoprobs = reducedscan::reduce_probs(genoprobs, allelic_series = allelic_series), pheno = y, kinship = K, reml = TRUE)
 ```
 
+```{r, perms}
+pfn <- "../data/derived_data/perm00111222.rds"
+if (!file.exists(pfn)){
+  perm00111222 <- qtl2::scan1perm(genoprobs = genoprobs, pheno = ymat, kinship = K, reml = TRUE, n_perm = 1000, cores = 0)
+  saveRDS(perm00111222, pfn)
+} else {
+  perm00111222 <- readRDS(pfn)
+}
+
+```
 
 
 
