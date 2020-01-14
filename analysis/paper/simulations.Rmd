@@ -54,10 +54,10 @@ allelic_series <- matrix(c(1, 0, 0,
                          nrow = 8, byrow = TRUE
                          )
 set.seed(12-01-2020)
-y <- lapply(X = rep(1, 1000), FUN = function(x){reducedscan::sim1(aprobs = genoprobs$`1`[, , 100], allelic_series = allelic_series, allelic_effects = 1:3 / 2, error_variance = x)})
+y <- lapply(X = rep(1, 10), FUN = function(x){reducedscan::sim1(aprobs = genoprobs$`1`[, , 100], allelic_series = allelic_series, allelic_effects = 1:3 / 2, error_variance = x)})
 ymat <- do.call("cbind", y)
-s1 <- qtl2::scan1(genoprobs = genoprobs, pheno = ymat, kinship = K, reml = TRUE)
-s1_red <- qtl2::scan1(genoprobs = reducedscan::reduce_probs(genoprobs, allelic_series = allelic_series), pheno = y, kinship = K, reml = TRUE)
+s1 <- qtl2::scan1(genoprobs = genoprobs, pheno = ymat, kinship = K, reml = TRUE, cores = 0)
+s1_red <- qtl2::scan1(genoprobs = reducedscan::reduce_probs(genoprobs, allelic_series = allelic_series), pheno = y, kinship = K, reml = TRUE, cores = 0)
 ```
 
 ```{r, perms}
