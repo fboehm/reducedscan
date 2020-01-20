@@ -9,7 +9,7 @@ Authors@R:
            comment = c(ORCID = "0000-0002-1644-5931"))
 Description: We infer allelic series (number of alleles and mapping from 
     founder lines to alleles, ie, which founders share alleles) and perform 
-    QTL scans with corresponding 'reduced' statistical models with one 
+    QTL scans with corresponding 'reduced' or 'restricted' statistical models with one 
     allele effect parameter per inferred allele.
 License: MIT + file LICENSE
 Encoding: UTF-8
