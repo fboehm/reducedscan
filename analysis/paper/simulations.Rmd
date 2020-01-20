@@ -1,0 +1,83 @@
+---
+title: "Simulations"
+author: "Frederick J. Boehm"
+date: "1/12/2020"
+output: html_document
+params:
+  lastmod: !r lubridate::now()
+---
+
+Last modified: `r params$lastmod`.
+
+```{r setup2, include=FALSE, dev="CairoPNG"}
+knitr::opts_chunk$set(dev="CairoPNG")
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r download-attie}
+#fn <- "../data/raw_data/attie.Rdata"
+#if (!file.exists(fn)){
+#  download.file(url = "https://datadryad.org/stash/downloads/file_stream/63306", destfile = fn)
+#}
+fng <- "../data/derived_data/attie_geno.rds"
+if (!file.exists(fng)){
+  load(fn)
+  saveRDS(genoprobs, file = fng)
+  saveRDS(map, "../data/derived_data/attie_map.rds")
+  saveRDS(K, "../data/derived_data/attie_kinship.rds")
+} else {
+  genoprobs <- readRDS(fng)
+  map <- readRDS("../data/derived_data/attie_map.rds")
+  K <- readRDS("../data/derived_data/attie_kinship.rds")
+}
+```
+
+
+
+
+
+
+```{r sim1}
+allelic_series <- matrix(c(1, 0, 0,
+                           1, 0, 0,
+                           0, 1, 0,
+                           0, 1, 0,
+                           0, 1, 0,
+                           0, 0, 1,
+                           0, 0, 1,
+                           0, 0, 1 ),
+                         nrow = 8, byrow = TRUE
+                         )
+set.seed(12-01-2020)
+y <- lapply(X = rep(1, 10), FUN = function(x){reducedscan::sim1(aprobs = genoprobs$`1`[, , 100], allelic_series = allelic_series, allelic_effects = 1:3 / 2, error_variance = x)})
+ymat <- do.call("cbind", y)
+rownames(ymat) <- rownames(genoprobs$`1`)
+s1 <- qtl2::scan1(genoprobs = genoprobs, pheno = ymat, kinship = K, reml = TRUE, cores = 0)
+s1_red <- qtl2::scan1(genoprobs = reducedscan::reduce_probs(genoprobs, allelic_series = allelic_series), pheno = ymat, kinship = K, reml = TRUE, cores = 0)
+```
+
+```{r, perms}
+pfn <- "../data/derived_data/perm00111222.rds"
+if (!file.exists(pfn)){
+  perm00111222 <- qtl2::scan1perm(genoprobs = genoprobs, pheno = ymat, kinship = K, reml = TRUE, n_perm = 1000, cores = 0)
+  saveRDS(perm00111222, pfn)
+} else {
+  perm00111222 <- readRDS(pfn)
+}
+pfn <- "../data/derived_data/perm00111222-reduced.rds"
+if (!file.exists(pfn)){
+  perm00111222_red <- qtl2::scan1perm(genoprobs = reducedscan::reduce_probs(genoprobs, allelic_series = allelic_series), pheno = ymat, kinship = K, reml = TRUE, n_perm = 1000, cores = 0)
+  saveRDS(perm00111222_red, pfn)
+} else {
+  perm00111222_red <- readRDS(pfn)
+}
+```
+
+
+
+
