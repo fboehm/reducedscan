@@ -1,0 +1,149 @@
+---
+title: "Jannink and Wu 2003 MCMC methods"
+author: "Frederick J. Boehm"
+date: "1/19/2020"
+output: html_document
+---
+
+IN the terminology of @jannink2003estimating, the sequence of updates per iteration is:
+
+1. update QTL inheritance matrix $Q$  
+1. update QTL allelic effects $a$  
+1. update family means $\beta$ and residual variance $\sigma^2$  
+1. update configuration given number of alleles, ie, $C | l$  
+1. update the number of alleles $l$
+
+The later @jannink2004optimal uses similar sequence of updates:
+
+1. Update the number of QTL alleles 
+1. Update the configuration given the number of alleles
+1. update QTL variance (when there are multiple QTL)
+1. update allelic effects
+1. update position and genotypes jointly
+1. update family means
+
+
+
+```{r}
+get_output <- function(numerator, denominator, current, proposal){
+  alpha <- min(1, prod(numerator / denominator))
+  bernoulli <- rbinom(n = 1, size = 1, prob = alpha)
+  return(bernoulli * proposal + (1 - bernoulli) * current)
+}
+
+update_effects_variance <- function(effects_variance, 
+                                    distance = 0.3, 
+                                    founder_effects){
+  # draw a random proposal from uniform distribution centered at current value
+  proposal <- runif(n = 1, 
+                    min = effects_variance - distance, 
+                    max = effects_variance + distance
+                    )
+  # calculate acceptance probability
+  numerator <- dnorm(founder_effects, mean = 0, sd = sqrt(proposal))
+  denominator <- dnorm(founder_effects, mean = 0, sd = sqrt(effects_variance))
+  output <- get_output(numerator = numerator, 
+                       denominator = denominator, 
+                       current = effects_variance, 
+                       proposal = proposal
+                       )
+  return(output)
+}
+
+update_effects <- function(effects, 
+                           distance, 
+                           effects_variance, 
+                           trait, 
+                           residual_variance, 
+                           collapsed_genotypes){
+  proposal <- numeric(length = length(effects))
+  for (i in seq_along(proposal)){
+    proposal[i] <- runif(n = 1, 
+                         min = effects[i] - distance, 
+                         max = effects[i] + distance
+                         )
+  }
+  numerator <- dnorm(n = length(trait), 
+                     mean = collapsed_genotypes %*% proposal, 
+                     sd = sqrt(residual_variance)
+                     )
+  denominator <- dnorm(n = length(trait), 
+                     mean = collapsed_genotypes %*% effects, 
+                     sd = sqrt(residual_variance)
+                     )
+  output <- get_output(numerator = numerator, 
+                       denominator = denominator, 
+                       current = effects, 
+                       proposal = proposal
+                       )
+  return(output)
+}
+
+update_residual_variance <- function(residual_variance, distance = 0.3){
+  proposal <- runif(n = 1, 
+                    min = residual_variance - distance, 
+                    max = residual_variance + distance
+                    )
+  numerator <- dnorm(y, 
+                     mean = collapsed_genotypes %*% effects, 
+                     sd = sqrt(proposal)
+                     )
+  denominator <- dnorm(y, 
+                       mean = collapsed_genotypes %*% effects, 
+                       sd = sqrt(residual_variance)
+                       )
+  output <- get_output(numerator = numerator, 
+                       denominator = denominator, 
+                       current = residual_variance, 
+                       proposal = proposal
+                       )
+  return(output)
+}
+
+
+
+update_allelic_number <- function(founder_number = 8){
+  # get proposal
+  if ((allelic_number < founder_number) & (allelic_number > 2)){
+    increase_indicator <- rbinom(n = 1, size = 1, prob = 0.5)
+  }
+  if (allelic_number == 2){
+    increase_indicator <- 1
+  }
+  if (allelic_number == founder_number){
+    increase_indicator <- 0
+  }
+  proposal_allelic_number <- allelic_number + increase_indicator - (1 - increase_indicator)
+  if (increase_indicator){
+    # choose an allele shared by at least two founders
+    ## calculate column sums of configuration matrix
+    colsums <- colSums(configuration)
+    shared_alleles <- which(colsums > 1)
+    allele_to_split <- sample(x = shared_alleles, size = 1)
+    founders_to_split <- which(configuration[ , allele_to_split] == 1)
+    group_indicators <- rbinom(n = length(founders_to_split), size = 1, prob = 0.5)
+    # make new configuration matrix
+    configuration_proposal <- configuration
+    binary <- rep(0, founder_number)
+    binary[founders_to_split[group_indicators]] <- 1
+    configuration_proposal[ , allele_to_split] <- binary
+    ## add a new column
+    binary0 <- rep(0, founder_number)
+    binary0 <- binary0[founders_to_split[1 - group_indicators]]
+    configuration_proposal <- cbind(configuration_proposal, binary0)
+    new_effect <- rnorm(n = 1, mean = 0, sd = sqrt(effects_variance))
+    effects_proposal <- c(effects, new_effect)
+  } else {
+    # choose two alleles to combine into one
+    
+  }
+  
+}
+
+
+
+update_allelic_configuration <- function(){}
+```
+
+
+
