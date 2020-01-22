@@ -44,11 +44,11 @@ update_effects_variance <- function(effects_variance,
   # calculate exponents for effects
   exponent <- colSums(configuration)
   # calc numerator
-  numerator <- dnorm(effects ^ exponent, 
+  numerator <- dnorm(rep(effects, each = exponent), 
                      mean = 0, 
                      sd = sqrt(proposal)
                      ) * (1 / min(2 * distance, distance + proposal))
-  denominator <- dnorm(effects ^ exponent, 
+  denominator <- dnorm(effects, 
                        mean = 0, 
                        sd = sqrt(effects_variance)
                        ) * (1 / min(2 * distance, distance + effects_variance))
@@ -62,7 +62,7 @@ update_effects_variance <- function(effects_variance,
 # update one effect from the vector of effects
 update_effect <- function(effects, 
                           effect_index, # which element of effects is considered for update
-                           distance = 0.3, 
+                           distance = 0.1, 
                            effects_variance, 
                            trait, 
                            residual_variance, 
@@ -323,10 +323,10 @@ config2[3, 2] <- 0
 effects <- c(1, 3)
 configuration <- config2
 residual_variance <- 1
-effects_variance <- var(c(3, 1))
+effects_variance <- 1
 # define list to hold outputs
 output <- list()
-for (i in 1:30000){
+for (i in 1:1000){
   output[[i]]<- janninkwu_mcmc_one_iteration(configuration = configuration, 
                                              genoprobs = gp, 
                                              effects = effects, 
