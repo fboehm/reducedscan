@@ -137,8 +137,69 @@ update_allelic_number <- function(configuration, genoprobs, effects, trait){
   if (allelic_number == founder_number){
     increase_indicator <- 0
   }
-  proposal_allelic_number <- allelic_number + increase_indicator - (1 - increase_indicator)
   if (increase_indicator){
+    cp_out <- calc_prob_allelic_number_increase()
+  } else { # propose a decrease in allelic number
+    cp_out <- calc_prob_allelic_number_decrease()
+  }
+  output <- get_output(numerator = cp_out$numerator, 
+             denominator = cp_out$denominator, 
+             current = list(effects, configuration), 
+             proposal = list(cp_out$effects_proposal, cp_out$configuration_proposal)
+             )
+  return(output)
+} ## need to define inputs, collapsed_geno, collapsed_geno_proposal, etc.##
+##
+calc_prob_allelic_number_decrease <- function(configuration, alleles_to_combine, genoprobs, effects){
+# propose a decrease in allelic number
+  allelic_number <- ncol(configuration)
+  founder_number <- nrow(configuration)
+    # choose two alleles to combine into one
+  alleles_to_combine <- sample(1:allelic_number, size = 2, replace = FALSE) # vector of length 2
+  # make configuration proposal matrix
+  configuration_proposal <- calc_configuration_combining_alleles(configuration, alleles_to_combine)
+  # make effects proposal vector
+  effects_proposal <- effects[ - max(alleles_to_combine)]
+  # define collapsed genotypes
+  collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
+  collapsed_genotypes <- genoprobs %*% configuration
+  numerator <- allelic_number * 
+    (allelic_number - 1) * 
+    count_configurations(founder_number = founder_number, 
+                         allelic_number = allelic_number
+                         ) * 
+    dnorm(trait, 
+          mean = collapsed_genotypes_proposal %*% effects_proposal, 
+          sd = sqrt(residual_variance)
+          )
+  # define etau plus etav
+  eta_u_plus_v <- colSums(configuration_proposal)[min(alleles_to_combine)]
+  l2_proposal <- sum(colSums(configuration_proposal) > 1)
+  denominator <- 2 * (2 ^ (eta_u_plus_v - 1) - 1) * 
+    l2_proposal * 
+    count_configurations(founder_number = founder_number, 
+                         allelic_number = allelic_number - 1
+                         ) * 
+    dnorm(trait, 
+          mean = collapsed_genotypes %*% effects, 
+          sd = sqrt(residual_variance)
+          )
+  return(list(numerator = numerator, 
+              denominator = denominator,
+              configuration_proposal = configuration_proposal, 
+              effects_proposal = effects_proposal
+              )
+         )
+}
+##
+calc_configuration_combining_alleles <- function(configuration, alleles_to_combine){
+  configuration[ , min(alleles_to_combine)] <- configuration[ , min(alleles_to_combine)] +
+    configuration[ , max(alleles_to_combine)]
+  out <- configuration[, - max(alleles_to_combine)]
+  return(out)
+}
+##
+calc_prob_allelic_number_increase <- function(configuration, shared_alleles, genoprobs, effects, effects_variance){
     # choose an allele shared by at least two founders
     ## calculate column sums of configuration matrix
     colsums <- colSums(configuration)
@@ -156,7 +217,7 @@ update_allelic_number <- function(configuration, genoprobs, effects, trait){
     binary0[founders_to_split[as.logical(1 - group_indicators)]] <- 1
     configuration_proposal <- cbind(configuration_proposal, binary0)
     colnames(configuration_proposal) <- NULL
-    new_effect <- rnorm(n = 1, mean = 0, sd = sqrt(effects_variance))
+    new_effect <- rnorm(n = 1, mean = 0, sd = sqrt(effects_variance)) # check this!!
     effects_proposal <- c(effects, new_effect)
     eta_u <- colSums(configuration)[allele_to_split] 
     # how many founders have the allele to 'split'??
@@ -179,33 +240,18 @@ update_allelic_number <- function(configuration, genoprobs, effects, trait){
       count_configurations(founder_number = founder_number, 
                            allelic_number = 1 + allelic_number
                            ) * 
-      dnorm(trait, mean = collapsed_genotypes %*% effects, sd = sqrt(residual_variance))
-  } else { # propose a decrease in allelic number
-    # choose two alleles to combine into one
-    alleles_to_combine <- sample(1:allelic_number, size = 2, replace = FALSE) # vector of length 2
-    configuration_proposal <- configuration
-    configuration_proposal[ , min(alleles_to_combine)] <- configuration_proposal[ , min(alleles_to_combine)] + configuration_proposal[ , max(alleles_to_combine)]
-    configuration_proposal <- configuration_proposal[, - max(alleles_to_combine)]
-    effects_proposal <- effects[ - max(alleles_to_combine)]
-    # define collapsed genotypes
-    collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
-    collapsed_genotypes <- genoprobs %*% configuration
-    numerator <- allelic_number * (allelic_number - 1) * count_configurations(founder_number = founder_number, allelic_number = allelic_number) * dnorm(trait, mean = collapsed_genotypes_proposal %*% effects_proposal, sd = sqrt(residual_variance))
-    eta_u_plus_v <- colSums(configuration_proposal)[min(alleles_to_combine)]
-    l2_proposal <- sum(colSums(configuration_proposal) > 1)
-    denominator <- 2 * (2 ^ (eta_u_plus_v - 1) - 1) * 
-      l2_proposal * 
-      count_configurations(founder_number = founder_number, 
-                           allelic_number = allelic_number - 1) * 
-      dnorm(trait, mean = collapsed_genotypes %*% effects, sd = sqrt(residual_variance))
-  }
-  output <- get_output(numerator = numerator, 
-             denominator = denominator, 
-             current = list(effects, configuration), 
-             proposal = list(effects_proposal, configuration_proposal)
-             )
-  return(output)
-} ## need to define inputs, collapsed_geno, collapsed_geno_proposal, etc.##
+      dnorm(trait, 
+            mean = collapsed_genotypes %*% effects, 
+            sd = sqrt(residual_variance)
+            )
+  return(list(numerator = numerator, 
+              denominator = denominator,
+              configuration_proposal = configuration_proposal, 
+              effects_proposal = effects_proposal
+              )
+         )
+}
+
 
 count_configurations <- function(founder_number = 8, allelic_number){
   # allele labels don't matter, but founder labels matter.
