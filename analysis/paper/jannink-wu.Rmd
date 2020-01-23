@@ -32,6 +32,15 @@ get_output <- function(numerator, denominator, current, proposal){
   return(out)
 }
 
+enumerate_configuration <- function(configuration){
+  return(apply(X = configuration, MARGIN = 1, FUN = function(x)which(x == 1)))
+}
+#' Use configuration and effects vector to get each founder's effect, even when there are fewer alleles than founders
+expand_effects <- function(effects, enumerated_configuration){
+  return(effects[enumerated_configuration])
+}
+
+
 update_effects_variance <- function(effects_variance, 
                                     distance = 0.3, 
                                     effects, 
@@ -41,14 +50,15 @@ update_effects_variance <- function(effects_variance,
                     min = max(0, effects_variance - distance), 
                     max = effects_variance + distance
                     )
-  # calculate exponents for effects
-  exponent <- colSums(configuration)
+  expanded_effects <- expand_effects(effects,
+                                     enumerate_configuration(configuration)
+                                     )
   # calc numerator
-  numerator <- dnorm(rep(effects, each = exponent), 
+  numerator <- dnorm(expanded_effects, 
                      mean = 0, 
                      sd = sqrt(proposal)
                      ) * (1 / min(2 * distance, distance + proposal))
-  denominator <- dnorm(effects, 
+  denominator <- dnorm(expanded_effects, 
                        mean = 0, 
                        sd = sqrt(effects_variance)
                        ) * (1 / min(2 * distance, distance + effects_variance))
@@ -140,7 +150,7 @@ update_allelic_number <- function(configuration, genoprobs, effects, trait){
   if (increase_indicator){
     cp_out <- calc_prob_allelic_number_increase()
   } else { # propose a decrease in allelic number
-    cp_out <- calc_prob_allelic_number_decrease()
+    cp_out <- calc_prob_allelic_number_decrease(configuration, genoprobs, effects)
   }
   output <- get_output(numerator = cp_out$numerator, 
              denominator = cp_out$denominator, 
@@ -150,7 +160,7 @@ update_allelic_number <- function(configuration, genoprobs, effects, trait){
   return(output)
 } ## need to define inputs, collapsed_geno, collapsed_geno_proposal, etc.##
 ##
-calc_prob_allelic_number_decrease <- function(configuration, alleles_to_combine, genoprobs, effects){
+calc_prob_allelic_number_decrease <- function(configuration, genoprobs, effects){
 # propose a decrease in allelic number
   allelic_number <- ncol(configuration)
   founder_number <- nrow(configuration)
@@ -192,14 +202,18 @@ calc_prob_allelic_number_decrease <- function(configuration, alleles_to_combine,
          )
 }
 ##
-calc_configuration_combining_alleles <- function(configuration, alleles_to_combine){
+calc_configuration_combining_alleles <- function(configuration, 
+                                                 alleles_to_combine){
   configuration[ , min(alleles_to_combine)] <- configuration[ , min(alleles_to_combine)] +
     configuration[ , max(alleles_to_combine)]
   out <- configuration[, - max(alleles_to_combine)]
   return(out)
 }
 ##
-calc_prob_allelic_number_increase <- function(configuration, shared_alleles, genoprobs, effects, effects_variance){
+calc_prob_allelic_number_increase <- function(configuration,
+                                              genoprobs, 
+                                              effects, 
+                                              effects_variance){
     # choose an allele shared by at least two founders
     ## calculate column sums of configuration matrix
     colsums <- colSums(configuration)
@@ -217,7 +231,10 @@ calc_prob_allelic_number_increase <- function(configuration, shared_alleles, gen
     binary0[founders_to_split[as.logical(1 - group_indicators)]] <- 1
     configuration_proposal <- cbind(configuration_proposal, binary0)
     colnames(configuration_proposal) <- NULL
-    new_effect <- rnorm(n = 1, mean = 0, sd = sqrt(effects_variance)) # check this!!
+    new_effect <- rnorm(n = 1, 
+                        mean = 0, 
+                        sd = sqrt(effects_variance)
+                        ) # check this!!
     effects_proposal <- c(effects, new_effect)
     eta_u <- colSums(configuration)[allele_to_split] 
     # how many founders have the allele to 'split'??
