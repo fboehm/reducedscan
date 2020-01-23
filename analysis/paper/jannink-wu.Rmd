@@ -148,9 +148,20 @@ update_allelic_number <- function(configuration, genoprobs, effects, trait){
     increase_indicator <- 0
   }
   if (increase_indicator){
-    cp_out <- calc_prob_allelic_number_increase()
+    cp_out <- calc_prob_allelic_number_increase(configuration,
+                                              genoprobs, 
+                                              effects, 
+                                              effects_variance, 
+                                              trait, 
+                                              residual_variance
+                                              )
   } else { # propose a decrease in allelic number
-    cp_out <- calc_prob_allelic_number_decrease(configuration, genoprobs, effects)
+    cp_out <- calc_prob_allelic_number_decrease(configuration, 
+                                                genoprobs, 
+                                                effects, 
+                                                trait, 
+                                                residual_variance
+                                                )
   }
   output <- get_output(numerator = cp_out$numerator, 
              denominator = cp_out$denominator, 
@@ -160,7 +171,11 @@ update_allelic_number <- function(configuration, genoprobs, effects, trait){
   return(output)
 } ## need to define inputs, collapsed_geno, collapsed_geno_proposal, etc.##
 ##
-calc_prob_allelic_number_decrease <- function(configuration, genoprobs, effects){
+calc_prob_allelic_number_decrease <- function(configuration, 
+                                              genoprobs, 
+                                              effects, 
+                                              trait, 
+                                              residual_variance){
 # propose a decrease in allelic number
   allelic_number <- ncol(configuration)
   founder_number <- nrow(configuration)
@@ -213,7 +228,9 @@ calc_configuration_combining_alleles <- function(configuration,
 calc_prob_allelic_number_increase <- function(configuration,
                                               genoprobs, 
                                               effects, 
-                                              effects_variance){
+                                              effects_variance, 
+                                              trait, 
+                                              residual_variance){
     # choose an allele shared by at least two founders
     ## calculate column sums of configuration matrix
     colsums <- colSums(configuration)
@@ -223,6 +240,8 @@ calc_prob_allelic_number_increase <- function(configuration,
     group_indicators <- rbinom(n = length(founders_to_split), size = 1, prob = 0.5)
     # make new configuration matrix
     configuration_proposal <- configuration
+    founder_number <- nrow(configuration)
+    allelic_number <- ncol(configuration)
     binary <- rep(0, founder_number)
     binary[founders_to_split[as.logical(group_indicators)]] <- 1
     configuration_proposal[ , allele_to_split] <- binary
