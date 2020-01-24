@@ -3,7 +3,12 @@ title: "Jannink and Wu 2003 MCMC methods"
 author: "Frederick J. Boehm"
 date: "1/19/2020"
 output: html_document
+params:
+  lastmod: !r lubridate::now()
+bibliography: references.bib
 ---
+
+Last modified: `r params$lastmod`.
 
 IN the terminology of @jannink2003estimating, the sequence of updates per iteration is:
 
@@ -40,35 +45,6 @@ expand_effects <- function(effects, enumerated_configuration){
   return(effects[enumerated_configuration])
 }
 
-
-update_effects_variance <- function(effects_variance, 
-                                    distance = 1, 
-                                    effects, 
-                                    configuration){
-  # draw a random proposal from uniform distribution centered at current value
-  proposal <- runif(n = 1, 
-                    min = max(0, effects_variance - distance), 
-                    max = effects_variance + distance
-                    )
-  expanded_effects <- expand_effects(effects,
-                                     enumerate_configuration(configuration)
-                                     )
-  # calc numerator
-  numerator <- dnorm(expanded_effects, 
-                     mean = 0, 
-                     sd = sqrt(proposal)
-                     ) * (1 / min(2 * distance, distance + proposal))
-  denominator <- dnorm(expanded_effects, 
-                       mean = 0, 
-                       sd = sqrt(effects_variance)
-                       ) * (1 / min(2 * distance, distance + effects_variance))
-  output <- get_output(numerator = numerator, 
-                       denominator = denominator, 
-                       current = effects_variance, 
-                       proposal = proposal
-                       ) 
-  return(output)
-}
 # update one effect from the vector of effects
 update_effect <- function(effects, 
                           effect_index, # which element of effects is considered for update
@@ -106,7 +82,7 @@ update_effect <- function(effects,
 }
 
 update_residual_variance <- function(residual_variance, 
-                                     distance = 0.3, 
+                                     distance = 2, 
                                      trait, 
                                      collapsed_genotypes, 
                                      effects){
@@ -140,7 +116,6 @@ update_residual_variance <- function(residual_variance,
 update_allelic_number <- function(configuration, 
                                   genoprobs, 
                                   effects, 
-                                  effects_variance, 
                                   trait, 
                                   residual_variance){
   allelic_number <- ncol(configuration)
@@ -163,7 +138,6 @@ update_allelic_number <- function(configuration,
     cp_out <- calc_prob_allelic_number_increase(configuration,
                                                 genoprobs, 
                                                 effects, 
-                                                effects_variance, 
                                                 trait, 
                                                 residual_variance
                                                 )
@@ -242,7 +216,6 @@ calc_configuration_combining_alleles <- function(configuration,
 calc_prob_allelic_number_increase <- function(configuration,
                                               genoprobs, 
                                               effects, 
-                                              effects_variance, 
                                               trait, 
                                               residual_variance){
     # choose an allele shared by at least two founders
@@ -268,7 +241,7 @@ calc_prob_allelic_number_increase <- function(configuration,
     #draw new effect for proposal
     new_effect <- rnorm(n = 1, 
                         mean = 0, 
-                        sd = sqrt(effects_variance)
+                        sd = sqrt(var(trait))
                         ) # check this!!
     effects_proposal <- c(effects, new_effect)
     eta_u <- colSums(configuration)[allele_to_split] 
@@ -314,7 +287,11 @@ count_configurations <- function(founder_number = 8, allelic_number){
 
 ```{r}
 # update configuration for a fixed number of alleles
-update_configuration <- function(configuration, trait, genoprobs, effects, residual_variance){
+update_configuration <- function(configuration, 
+                                 trait, 
+                                 genoprobs, 
+                                 effects, 
+                                 residual_variance){
   # determine which alleles have multiple founders
   alleles_with_multiple_founders <- which(colSums(configuration) > 1)
   # randomly choose an allele with multiple founders
@@ -353,53 +330,46 @@ update_configuration <- function(configuration, trait, genoprobs, effects, resid
 ```
 
 ```{r}
-janninkwu_mcmc_one_iteration <- function(configuration, 
-                                         genoprobs, 
-                                         effects, 
-                                         trait, 
-                                         residual_variance, 
-                                         effects_variance){
+outs <- list()
+current <- list(configuration = config, 
+                effects = c(1, 3), 
+                residual_variance = 2
+                )
+
+for (i in 1:1000){
+  if (i > 1) current <- output[[i - 1]]
   # update allelic number
-  out <- update_allelic_number(configuration = configuration, 
-                               genoprobs = genoprobs, 
-                               effects = effects, 
-                               trait = trait, 
-                               effects_variance = effects_variance,
-                               residual_variance = residual_variance
+  out <- update_allelic_number(configuration = current$configuration, 
+                               genoprobs = geno$`1`[ , , 100], 
+                               effects = current$effects, 
+                               trait = tr, 
+                               residual_variance = current$residual_variance
                                )
-  effects <- out$out[[1]] 
-  configuration <- out$out[[2]]
+  current$effects <- out$out[[1]] 
+  current$configuration <- out$out[[2]]
   # update configuration for fixed allelic number
-  configuration <- update_configuration(configuration = configuration, 
-                                        trait = trait, 
-                                        genoprobs = genoprobs, 
-                                        effects = effects, 
-                                        residual_variance = residual_variance
+  current$configuration <- update_configuration(configuration = current$configuration, 
+                                        trait = tr, 
+                                        genoprobs = geno$`1`[ , , 100], 
+                                        effects = current$effects, 
+                                        residual_variance = current$residual_variance
                                         )$out
-  effects_variance <- update_effects_variance(effects_variance = effects_variance,
-                                              effects = effects,
-                                              configuration = configuration
-                                              )$out
   # iterate over effects vector
   for (k in seq_along(effects)){
-    effects <- update_effect(effects = effects, 
+    current$effects <- update_effect(effects = current$effects, 
                               effect_index = k,
-                              trait = trait, 
-                              residual_variance = residual_variance,
-                              collapsed_genotypes = genoprobs %*% configuration
+                              trait = tr, 
+                              residual_variance = current$residual_variance,
+                              collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration
                               )$out
   }
   ##
-  residual_variance <- update_residual_variance(residual_variance = residual_variance, 
-                                                trait = trait,
-                                                collapsed_genotypes = genoprobs %*% configuration, 
-                                                effects = effects
+  current$residual_variance <- update_residual_variance(residual_variance = current$residual_variance, 
+                                                trait = tr,
+                                                collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration, 
+                                                effects = current$effects
                                                 )$out
-  return(list(configuration = configuration, 
-              effects = effects, 
-              effects_variance = effects_variance, 
-              residual_variance = residual_variance)
-         )
+  outs[[i]] <- current 
 }
 ```
 
@@ -421,82 +391,7 @@ tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, al
 
 ## Apply mcmc to infer allelic series at QTL
 
-```{r, mcmc}
-# define list to hold outputs
-output <- list()
-output[[1]] <- janninkwu_mcmc_one_iteration(configuration = config, 
-                                             genoprobs = geno$`1`[ , , 100], 
-                                             effects = c(1, 3), 
-                                             trait = tr, 
-                                             residual_variance = 1,
-                                             effects_variance = 2
-                                             )
-for (i in 2:1000){
-  output[[i]]<- janninkwu_mcmc_one_iteration(configuration = output[[i - 1]]$configuration, 
-                                             genoprobs = geno$`1`[ , , 100], 
-                                             effects = output[[i - 1]]$effects, 
-                                             trait = tr, 
-                                             residual_variance = output[[i - 1]]$residual_variance,
-                                             effects_variance = output[[i - 1]]$effects_variance
-                                             )
-}
-```
 
-
-```{r}
-# define starting values
-effects <- c(1, 3)
-configuration <- config2
-residual_variance <- 1
-effects_variance <- var(effects)
-tr <- reducedscan::sim1(aprobs = gp, allelic_series = config2, allelic_effects = effects)
-
-outs <- list()
-for (i in 1:1000){
-  out <- update_allelic_number(configuration = configuration, 
-                               genoprobs = gp,  
-                               effects = effects, 
-                               trait = tr
-                               )
-  effects <- out$out[[1]] 
-  configuration <- out$out[[2]]
-  alpha_allelic_number_update <- out$alpha
-  bernoulli_allelic_number_update <- out$bernoulli
-    # update configuration for fixed allelic number
-  configuration <- update_configuration(configuration = configuration, 
-                                        trait = tr, 
-                                        genoprobs = gp, 
-                                        effects = effects
-                                        )$out
-  effects_variance <- update_effects_variance(effects_variance = effects_variance,
-                                              effects = effects,
-                                              configuration = configuration
-                                              )$out
-  # iterate over effects vector
-  for (k in seq_along(effects)){
-    effects <- update_effect(effects = effects, 
-                              effect_index = k,
-                              effects_variance = effects_variance,
-                              trait = tr, 
-                              residual_variance = residual_variance,
-                              collapsed_genotypes = gp %*% configuration
-                              )$out
-  }
-  ##
-  residual_variance <- update_residual_variance(residual_variance = residual_variance, 
-                                                trait = tr,
-                                                collapsed_genotypes = gp %*% configuration, 
-                                                effects = effects
-                                                )$out
-  outs[[i]] <- list(configuration = configuration, 
-              effects = effects, 
-              effects_variance = effects_variance, 
-              residual_variance = residual_variance, 
-       alpha = alpha_allelic_number_update, 
-       bernoulli = bernoulli_allelic_number_update
-       )
-}
-```
 
 ```{r, check_configuration}
 verify_configuration <- function(configuration){
