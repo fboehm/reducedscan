@@ -28,6 +28,11 @@ I'll first attempt to write the qtlbim mcmc algorithm in R. That way, I will gai
 
 We first rederive the algorithm for the case of two founders, as in qtlbim software.
 
+I'm interested in the case of a single trait and, potentially, multiple QTL for that one trait. 
+
+Start with the joint likelihood.
+
+
 
 
 
