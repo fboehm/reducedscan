@@ -1,0 +1,38 @@
+---
+title: "qtlbim mcmc with 8 founders"
+author: "Frederick J. Boehm"
+date: "January 25, 2020"
+output: bookdown::html_document2
+bibliography: references.bib
+params:
+  lastmod: !r lubridate::now()
+---
+
+(Last modified: `r params$lastmod`.)
+
+## Overview
+
+I want to adapt the MCMC from qtlbim by adding steps that infer the 
+allelic series, ie, the configuration and the number of alleles.
+
+One approach is to borrow from @jannink2003estimating by updating the allelic number and, in a separate step
+the configuration for a fixed allelic number.
+
+I may ultimately want to write this in C++, but, for now, I'll write in R.
+
+## Reproduce the qtlbim mcmc in R code
+
+I'll first attempt to write the qtlbim mcmc algorithm in R. That way, I will gain understanding of the algorithm while having a R coding of it. I'll also be able to confirm that I've coded it correctly, since I can check results against those of Brian Yandell's qtlbim.
+
+### Deriving the MCMC algorithm for qtlbim
+
+We first rederive the algorithm for the case of two founders, as in qtlbim software.
+
+
+
+
+
+## References
+
+
+
