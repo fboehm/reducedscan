@@ -169,7 +169,7 @@ calc_prob_allelic_number_decrease <- function(configuration,
   alleles_to_combine <- sample(1:allelic_number, size = 2, replace = FALSE) # vector of length 2
   # make configuration proposal matrix
   configuration_proposal <- calc_configuration_combining_alleles(configuration, alleles_to_combine)
-  verify(configuration_proposal)
+  verify_configuration(configuration_proposal)
   # make effects proposal vector
   effects_proposal <- effects[ - max(alleles_to_combine)]
   # define collapsed genotypes
@@ -329,15 +329,51 @@ update_configuration <- function(configuration,
 }
 ```
 
+```{r, check_configuration}
+verify_configuration <- function(configuration){
+  stopifnot(sum(configuration) == nrow(configuration))
+  stopifnot(rowSums(configuration) == rep(1, nrow(configuration)))
+  stopifnot(sum(configuration == 0) == (ncol(configuration) - 1) * nrow(configuration))
+}
+```
+
+
+
+
+
+
+## Simulate traits
+
+```{r load_attie}
+geno <- readRDS("../data/derived_data/attie_geno.rds")
+```
+
 ```{r}
+config <- matrix(nrow = 8, ncol = 2)
+config[, 1] <- rep(c(0, 1), each = 4)
+config[, 2] <- 1 - config[, 1]
+tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(10, 30))
+```
+
+
+
+
+
+## Examining allelic series updates
+
+We consider in detail the updates to allelic configuration (for fixed number) and allelic number.
+
+```{r}
+config2 <- cbind(config, rep(0, 8))
+config2[1, 2] <- 0; config2[1, 3] <- 1
 outs <- list()
-current <- list(configuration = config, 
-                effects = c(1, 3), 
+current <- list(configuration = config2, 
+                effects = c(10, 30, 1), 
                 residual_variance = 2
                 )
 
 for (i in 1:1000){
-  if (i > 1) current <- output[[i - 1]]
+  if (i > 1) current <- outs[[i - 1]]
   # update allelic number
   out <- update_allelic_number(configuration = current$configuration, 
                                genoprobs = geno$`1`[ , , 100], 
@@ -364,39 +400,20 @@ for (i in 1:1000){
                               )$out
   }
   ##
-  current$residual_variance <- update_residual_variance(residual_variance = current$residual_variance, 
-                                                trait = tr,
-                                                collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration, 
-                                                effects = current$effects
-                                                )$out
+  current$residual_variance <- 2
   outs[[i]] <- current 
 }
 ```
 
 
-## Simulate traits
+It looks like only the first element of the effects vector is getting updated. Hmm. 
 
-```{r load_attie}
-geno <- readRDS("../data/derived_data/attie_geno.rds")
-```
+Follow Geyer's advice to expose write functions that allow for exposing of intermediate outputs. 
 
-```{r}
-config <- matrix(nrow = 8, ncol = 2)
-config[, 1] <- rep(c(0, 1), each = 4)
-config[, 2] <- 1 - config[, 1]
-tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(1, 3))
-```
+So, I need to restructure my mcmc "function" so that I capture the output of every function. Note that two 
+distinct steps update the configuration, yet I currently capture only one C matrix per iteration.
 
 
 
-## Apply mcmc to infer allelic series at QTL
 
 
-
-```{r, check_configuration}
-verify_configuration <- function(configuration){
-  stopifnot(sum(configuration) == nrow(configuration))
-  stopifnot(rowSums(configuration) == rep(1, nrow(configuration)))
-  stopifnot(sum(configuration == 0) == (ncol(configuration) - 1) * nrow(configuration))
-}
-```
