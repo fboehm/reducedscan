@@ -505,3 +505,16 @@ verify_configuration <- function(configuration){
   stopifnot(sum(configuration == 0) == (ncol(configuration) - 1) * nrow(configuration))
 }
 ```
+
+
+## Assessing $C|l$ and $l$ update steps
+
+Here, we seek to isolate the two steps that involve allelic number and allelic configuration updates.
+THe other steps are skipped by assigning the true value (from the simulation) 
+to the parameter.
+
+```{r}
+
+```
+
+

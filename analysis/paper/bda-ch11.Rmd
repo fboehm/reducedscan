@@ -14,5 +14,4 @@ The goal here is to work through exercises at the end of Chapter 11 of Gelman's
 Bayesian Data Analysis book.
 
 
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+## 
