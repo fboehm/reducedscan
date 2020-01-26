@@ -30,7 +30,7 @@ We first rederive the algorithm for the case of two founders, as in qtlbim softw
 
 I'm interested in the case of a single trait and, potentially, multiple QTL for that one trait. 
 
-Start with the joint likelihood.
+Start with the joint likelihood for observed and unobserved quantities.
 
 
 

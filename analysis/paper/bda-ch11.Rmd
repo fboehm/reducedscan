@@ -1,0 +1,18 @@
+---
+title: "BDA, Chapter 11"
+author: "Frederick J. Boehm"
+output: bookdown::html_document2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+The goal here is to work through exercises at the end of Chapter 11 of Gelman's 
+Bayesian Data Analysis book.
+
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
