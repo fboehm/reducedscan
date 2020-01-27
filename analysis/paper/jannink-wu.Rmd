@@ -405,20 +405,11 @@ for (i in 1:1000){
 }
 ```
 
-
-<<<<<<< HEAD
-## Simulate traits
-
-```{r load_attie}
-  geno <- readRDS("../data/derived_data/attie_geno.rds")
-```
-=======
 It looks like only the first element of the effects vector is getting updated. Hmm. 
->>>>>>> 7b3dc39c25e6dd49ed9fced0aa86932c2ed2600d
 
 Follow Geyer's advice to expose write functions that allow for exposing of intermediate outputs. 
 
-So, I need to restructure my mcmc "function" so that I capture the output of every function. Note that two 
+So, I need to restructure my mcmc "function" so that I capture the output of every updating function. Note that two 
 distinct steps update the configuration, yet I currently capture only one C matrix per iteration.
 
 
