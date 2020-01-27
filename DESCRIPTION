@@ -14,8 +14,11 @@ Description: We infer allelic series (number of alleles and mapping from
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: bookdown,
-    here
+Imports: 
+    bookdown,
+    here,
+    gmp,
+    clue
 Suggests: 
     devtools,
     git2r,

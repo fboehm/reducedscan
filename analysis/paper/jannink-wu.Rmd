@@ -213,6 +213,30 @@ calc_configuration_combining_alleles <- function(configuration,
   return(out)
 }
 ##
+# make new configuration matrix
+propose_wider_configuration <- function(current_configuration, group_indicators, allele_to_split){
+  configuration_proposal <- current_configuration
+  founder_number <- nrow(current_configuration)
+  allelic_number <- ncol(current_configuration)
+  binary <- rep(0, founder_number)
+  binary[founders_to_split[as.logical(group_indicators)]] <- 1
+  configuration_proposal[ , allele_to_split] <- binary
+  ## add a new column
+  binary0 <- rep(0, founder_number)
+  binary0[founders_to_split[as.logical(1 - group_indicators)]] <- 1
+  configuration_proposal <- cbind(configuration_proposal, binary0)
+  colnames(configuration_proposal) <- NULL
+  verify_configuration(configuration_proposal)
+  return(configuration_proposal)
+}     
+  
+partition_into_two_groups <- function(vector){
+  all_partitions <- clue::as.cl_partition(vector)$.Data
+  partitions_of_size_two <- all_partitions[, apply(FUN = max, X = all_partitions, MARGIN = 2) == 1]
+  part_out_index <- sample(1:ncol(partitions_of_size_two), size = 1)
+  return(partitions_of_size_two[, part_out_index])
+}
+
 calc_prob_allelic_number_increase <- function(configuration,
                                               genoprobs, 
                                               effects, 
@@ -220,24 +244,12 @@ calc_prob_allelic_number_increase <- function(configuration,
                                               residual_variance){
     # choose an allele shared by at least two founders
     ## calculate column sums of configuration matrix
-    colsums <- colSums(configuration)
-    shared_alleles <- which(colsums > 1)
+    shared_alleles <- which(colSums(configuration) > 1) # numeric vector of length up to 4 (for DO)
     allele_to_split <- sample(x = shared_alleles, size = 1)
     founders_to_split <- which(configuration[ , allele_to_split] == 1)
-    group_indicators <- rbinom(n = length(founders_to_split), size = 1, prob = 0.5)
-    # make new configuration matrix
-    configuration_proposal <- configuration
-    founder_number <- nrow(configuration)
-    allelic_number <- ncol(configuration)
-    binary <- rep(0, founder_number)
-    binary[founders_to_split[as.logical(group_indicators)]] <- 1
-    configuration_proposal[ , allele_to_split] <- binary
-    ## add a new column
-    binary0 <- rep(0, founder_number)
-    binary0[founders_to_split[as.logical(1 - group_indicators)]] <- 1
-    configuration_proposal <- cbind(configuration_proposal, binary0)
-    colnames(configuration_proposal) <- NULL
-    verify_configuration(configuration_proposal)
+    group_indicators <- partition_into_two_groups(founders_to_split)
+    #group_indicators <- rbinom(n = length(founders_to_split), size = 1, prob = 0.5) # binary vector partitioning founders to split -- THIS IS PROBLEMATIC WHEN binomial rv's come up all 1s or all 0s!!
+    configuration_proposal <- propose_wider_configuration(configuration, group_indicators, allele_to_split)
     #draw new effect for proposal
     new_effect <- rnorm(n = 1, 
                         mean = 0, 
@@ -334,6 +346,7 @@ verify_configuration <- function(configuration){
   stopifnot(sum(configuration) == nrow(configuration))
   stopifnot(rowSums(configuration) == rep(1, nrow(configuration)))
   stopifnot(sum(configuration == 0) == (ncol(configuration) - 1) * nrow(configuration))
+  stopifnot(prod(colSums(configuration)) > 0)
 }
 ```
 
@@ -368,40 +381,49 @@ config2 <- cbind(config, rep(0, 8))
 config2[1, 2] <- 0; config2[1, 3] <- 1
 outs <- list()
 current <- list(configuration = config2, 
-                effects = c(10, 30, 1), 
+                effects = c(20, 20, 1), 
                 residual_variance = 2
                 )
-
-for (i in 1:1000){
+all_outs <- list()
+set.seed(2020-01-27)
+for (i in 1:10000){
   if (i > 1) current <- outs[[i - 1]]
   # update allelic number
-  out <- update_allelic_number(configuration = current$configuration, 
+  ua_out <- update_allelic_number(configuration = current$configuration, 
                                genoprobs = geno$`1`[ , , 100], 
                                effects = current$effects, 
                                trait = tr, 
                                residual_variance = current$residual_variance
                                )
-  current$effects <- out$out[[1]] 
-  current$configuration <- out$out[[2]]
+  current$effects <- ua_out$out[[1]] 
+  current$configuration <- ua_out$out[[2]]
+  
   # update configuration for fixed allelic number
-  current$configuration <- update_configuration(configuration = current$configuration, 
+  uc_out <- update_configuration(configuration = current$configuration, 
                                         trait = tr, 
                                         genoprobs = geno$`1`[ , , 100], 
                                         effects = current$effects, 
                                         residual_variance = current$residual_variance
-                                        )$out
+                                        )
+  current$configuration <- uc_out$out
   # iterate over effects vector
+  ue_outs <- list()
   for (k in seq_along(effects)){
-    current$effects <- update_effect(effects = current$effects, 
+     ue_outs[[k]] <- update_effect(effects = current$effects, 
                               effect_index = k,
                               trait = tr, 
                               residual_variance = current$residual_variance,
                               collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration
-                              )$out
+                              )
+    current$effects <- ue_outs[[k]]$out
   }
   ##
-  current$residual_variance <- 2
+  current$residual_variance <- 1
   outs[[i]] <- current 
+  all_outs[[i]] <- list(ua_out = ua_out,
+                        uc_out = uc_out,
+                        ue_outs = ue_outs
+                        )
 }
 ```
 
