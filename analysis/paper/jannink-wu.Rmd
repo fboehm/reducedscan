@@ -31,8 +31,8 @@ The later @jannink2004optimal uses similar sequence of updates:
 
 ```{r}
 get_output <- function(numerator, denominator, current, proposal){
-  alpha <- min(1, prod(numerator / denominator))
-  bernoulli <- rbinom(n = 1, size = 1, prob = alpha)
+  alpha <- min(0, sum(numerator - denominator))
+  bernoulli <- rbinom(n = 1, size = 1, prob = exp(alpha))
   if (bernoulli) {out <- proposal} else {out <- current}
   return(list(out = out, bernoulli = bernoulli, alpha = alpha, proposal = proposal))
 }
@@ -59,19 +59,23 @@ update_effect <- function(effects,
                     )
   numerator <- dnorm(trait, 
                      mean = collapsed_genotypes %*% proposal, 
-                     sd = sqrt(residual_variance)
-                     ) * 
+                     sd = sqrt(residual_variance), 
+                     log = TRUE
+                     ) + 
     dnorm(proposal[effect_index], 
           mean = 0, 
-          sd = sqrt(var(trait))
+          sd = sqrt(var(trait)), 
+          log = TRUE
           )
   denominator <- dnorm(trait, 
                      mean = collapsed_genotypes %*% effects, 
-                     sd = sqrt(residual_variance)
-                     ) * 
+                     sd = sqrt(residual_variance), 
+                     log = TRUE
+                     ) + 
     dnorm(effects[effect_index], 
           mean = 0, 
-          sd = sqrt(var(trait))
+          sd = sqrt(var(trait)), 
+          log = TRUE
           )
   output <- get_output(numerator = numerator, 
                        denominator = denominator, 
@@ -92,12 +96,14 @@ update_residual_variance <- function(residual_variance,
                     )
   numerator <- dnorm(trait, 
                      mean = collapsed_genotypes %*% effects, 
-                     sd = sqrt(proposal)
-                     ) * (1 / min(2 * distance, distance + proposal))
+                     sd = sqrt(proposal), 
+                     log = TRUE
+                     ) + log (1 / min(2 * distance, distance + proposal))
   denominator <- dnorm(trait, 
                        mean = collapsed_genotypes %*% effects, 
-                       sd = sqrt(residual_variance)
-                       ) * (1 / min(2 * distance, distance + residual_variance))
+                       sd = sqrt(residual_variance), 
+                       log = TRUE
+                       ) + log(1 / min(2 * distance, distance + residual_variance))
   output <- get_output(numerator = numerator, 
                        denominator = denominator, 
                        current = residual_variance, 
@@ -175,11 +181,11 @@ calc_prob_allelic_number_decrease <- function(configuration,
   # define collapsed genotypes
   collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
   collapsed_genotypes <- genoprobs %*% configuration
-  numerator <- allelic_number * 
-    (allelic_number - 1) * 
-    count_configurations(founder_number = founder_number, 
+  numerator <- log(allelic_number) + 
+    log(allelic_number - 1) + 
+    log(count_configurations(founder_number = founder_number, 
                          allelic_number = allelic_number
-                         ) * 
+                         )) +
     dnorm(trait, 
           mean = collapsed_genotypes_proposal %*% effects_proposal, 
           sd = sqrt(residual_variance), 
@@ -188,11 +194,11 @@ calc_prob_allelic_number_decrease <- function(configuration,
   # define etau plus etav
   eta_u_plus_v <- colSums(configuration_proposal)[min(alleles_to_combine)]
   l2_proposal <- sum(colSums(configuration_proposal) > 1)
-  denominator <- 2 * (2 ^ (eta_u_plus_v - 1) - 1) * 
-    l2_proposal * 
-    count_configurations(founder_number = founder_number, 
+  denominator <-log(2 * (2 ^ (eta_u_plus_v - 1) - 1)) + 
+    log(l2_proposal) + 
+    log(count_configurations(founder_number = founder_number, 
                          allelic_number = allelic_number - 1
-                         ) * 
+                         )) + 
     dnorm(trait, 
           mean = collapsed_genotypes %*% effects, 
           sd = sqrt(residual_variance), 
@@ -255,7 +261,7 @@ calc_prob_allelic_number_increase <- function(configuration,
     allelic_number <- ncol(configuration)
     #draw new effect for proposal
     new_effect <- rnorm(n = 1, 
-                        mean = 0, 
+                        mean = 0, # IS THIS RIGHT??? maybe try mean(trait)??
                         sd = sqrt(var(trait))
                         ) # check this!!
     effects_proposal <- c(effects, new_effect)
@@ -265,24 +271,26 @@ calc_prob_allelic_number_increase <- function(configuration,
     collapsed_genotypes <- genoprobs %*% configuration
     collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
     
-    numerator <- 2 * (2 ^ (eta_u - 1) - 1) * 
-      sum(colSums(configuration) > 1) * 
-      count_configurations(founder_number = founder_number, 
+    numerator <- log(2 * (2 ^ (eta_u - 1) - 1)) + 
+      log(sum(colSums(configuration) > 1)) + 
+      log(count_configurations(founder_number = founder_number, 
                            allelic_number = allelic_number
-                           ) * 
+                           )) +  
       dnorm(trait, 
             mean = collapsed_genotypes_proposal %*% effects_proposal, 
-            sd = sqrt(residual_variance)
+            sd = sqrt(residual_variance),
+            log = TRUE
             )
     # how many alleles are carried by at least 2 founders?
-    denominator <- (allelic_number + 1) * 
-      allelic_number * 
-      count_configurations(founder_number = founder_number, 
+    denominator <- log(allelic_number + 1) + 
+      log(allelic_number) + 
+      log(count_configurations(founder_number = founder_number, 
                            allelic_number = 1 + allelic_number
-                           ) * 
+                           )) +  
       dnorm(trait, 
             mean = collapsed_genotypes %*% effects, 
-            sd = sqrt(residual_variance)
+            sd = sqrt(residual_variance),
+            log = TRUE
             )
   return(list(numerator = numerator, 
               denominator = denominator,
@@ -327,13 +335,15 @@ update_configuration <- function(configuration,
   l2_proposal <- sum(colSums(configuration_proposal) > 1)
   collapsed_genotypes <- genoprobs %*% configuration
   collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
-  numerator <- eta_u * l2 * dnorm(trait, 
+  numerator <- log(eta_u * l2) + dnorm(trait, 
                                   mean = collapsed_genotypes_proposal %*% effects, 
-                                  sd = sqrt(residual_variance)
+                                  sd = sqrt(residual_variance),
+                                  log = TRUE
                                   )
-  denominator <- eta_v * l2_proposal * dnorm(trait, 
+  denominator <- log(eta_v * l2_proposal) + dnorm(trait, 
                                              mean = collapsed_genotypes %*% effects, 
-                                             sd = sqrt(residual_variance)
+                                             sd = sqrt(residual_variance),
+                                             log = TRUE
                                              )
   output <- get_output(numerator = numerator, 
                        denominator = denominator, 
