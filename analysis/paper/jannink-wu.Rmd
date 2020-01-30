@@ -403,7 +403,7 @@ current <- list(configuration = config2,
 all_outs <- list()
 set.seed(2020-01-27)
 for (i in 1:10000){
-  if (i > 1) current <- outs[[i - 1]]
+  if (i > 1) current <- outs[[i - 1]] # ok since this is the first step in each iteration.
   # update allelic number
   ua_out <- update_allelic_number(configuration = current$configuration, 
                                genoprobs = geno$`1`[ , , 100], 
