@@ -157,7 +157,7 @@ update_allelic_number <- function(configuration,
   }
   output <- get_output(numerator = cp_out$numerator, 
              denominator = cp_out$denominator, 
-             current = list(effects = effects, cconfiguration = configuration), 
+             current = list(effects = effects, configuration = configuration), 
              proposal = list(effects = cp_out$effects_proposal, configuration = cp_out$configuration_proposal)
              )
   return(output)
@@ -323,50 +323,54 @@ update_configuration <- function(configuration,
                                  genoprobs, 
                                  effects, 
                                  residual_variance){
-  # determine which alleles have multiple founders
-  alleles_with_multiple_founders <- which(colSums(configuration) > 1)
-  # randomly choose an allele with multiple founders
-  if (length(alleles_with_multiple_founders) > 1) {
-    allele_to_change <- sample(alleles_with_multiple_founders, size = 1)
+  if (ncol(configuration) < nrow(configuration)){
+    # determine which alleles have multiple founders
+    alleles_with_multiple_founders <- which(colSums(configuration) > 1)
+    # randomly choose an allele with multiple founders
+    if (length(alleles_with_multiple_founders) > 1) {
+      allele_to_change <- sample(alleles_with_multiple_founders, size = 1)
+    } else {
+      allele_to_change <- alleles_with_multiple_founders
+    }
+    # choose a founder with 'allele_to_change' 
+    founders_with_allele_to_change <- which(configuration[, allele_to_change] == 1)
+    # randomly choose one from 'founders_with_allele_to_change'
+    founder_to_change <- sample(founders_with_allele_to_change, size = 1)
+    # 
+    v_possible_alleles <- (1:ncol(configuration))[- allele_to_change]
+    if (length(v_possible_alleles) > 1){
+      v_allele <- sample(v_possible_alleles, size = 1)
+    } else {
+      v_allele <- v_possible_alleles
+    }
+    configuration_proposal <- configuration
+    configuration_proposal[founder_to_change, allele_to_change] <- 0 
+    configuration_proposal[founder_to_change, v_allele] <- 1
+    verify_configuration(configuration_proposal)
+    eta_u <- colSums(configuration)[allele_to_change]
+    eta_v <- colSums(configuration_proposal)[v_allele]
+    l2 <- sum(colSums(configuration) > 1)
+    l2_proposal <- sum(colSums(configuration_proposal) > 1)
+    collapsed_genotypes <- genoprobs %*% configuration
+    collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
+    numerator <- log(eta_u * l2) + dnorm(trait, 
+                                    mean = collapsed_genotypes_proposal %*% effects, 
+                                    sd = sqrt(residual_variance),
+                                    log = TRUE
+                                    )
+    denominator <- log(eta_v * l2_proposal) + dnorm(trait, 
+                                               mean = collapsed_genotypes %*% effects, 
+                                               sd = sqrt(residual_variance),
+                                               log = TRUE
+                                               )
+    output <- get_output(numerator = numerator, 
+                         denominator = denominator, 
+                         current = configuration, 
+                         proposal = configuration_proposal
+                         )
   } else {
-    allele_to_change <- alleles_with_multiple_founders
+    output <- list(out = configuration, bernoulli = 1, alpha = 1, proposal = configuration)
   }
-  # choose a founder with 'allele_to_change' 
-  founders_with_allele_to_change <- which(configuration[, allele_to_change] == 1)
-  # randomly choose one from 'founders_with_allele_to_change'
-  founder_to_change <- sample(founders_with_allele_to_change, size = 1)
-  # 
-  v_possible_alleles <- (1:ncol(configuration))[- allele_to_change]
-  if (length(v_possible_alleles) > 1){
-    v_allele <- sample(v_possible_alleles, size = 1)
-  } else {
-    v_allele <- v_possible_alleles
-  }
-  configuration_proposal <- configuration
-  configuration_proposal[founder_to_change, allele_to_change] <- 0 
-  configuration_proposal[founder_to_change, v_allele] <- 1
-  verify_configuration(configuration_proposal)
-  eta_u <- colSums(configuration)[allele_to_change]
-  eta_v <- colSums(configuration_proposal)[v_allele]
-  l2 <- sum(colSums(configuration) > 1)
-  l2_proposal <- sum(colSums(configuration_proposal) > 1)
-  collapsed_genotypes <- genoprobs %*% configuration
-  collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
-  numerator <- log(eta_u * l2) + dnorm(trait, 
-                                  mean = collapsed_genotypes_proposal %*% effects, 
-                                  sd = sqrt(residual_variance),
-                                  log = TRUE
-                                  )
-  denominator <- log(eta_v * l2_proposal) + dnorm(trait, 
-                                             mean = collapsed_genotypes %*% effects, 
-                                             sd = sqrt(residual_variance),
-                                             log = TRUE
-                                             )
-  output <- get_output(numerator = numerator, 
-                       denominator = denominator, 
-                       current = configuration, 
-                       proposal = configuration_proposal
-                       )
   return(output)
 }
 ```
