@@ -48,7 +48,7 @@ expand_effects <- function(effects, enumerated_configuration){
 # update one effect from the vector of effects
 update_effect <- function(effects, 
                           effect_index, # which element of effects is considered for update
-                           distance = 0.3, 
+                           distance = 0.2, 
                            trait, 
                            residual_variance, 
                            collapsed_genotypes){
@@ -63,7 +63,7 @@ update_effect <- function(effects,
                      log = TRUE
                      ) + 
     dnorm(proposal[effect_index], 
-          mean = 0, 
+          mean = mean(trait), # check this!!
           sd = sqrt(var(trait)), 
           log = TRUE
           )
@@ -73,7 +73,7 @@ update_effect <- function(effects,
                      log = TRUE
                      ) + 
     dnorm(effects[effect_index], 
-          mean = 0, 
+          mean = mean(trait), # check this!
           sd = sqrt(var(trait)), 
           log = TRUE
           )
@@ -261,7 +261,7 @@ calc_prob_allelic_number_increase <- function(configuration,
     allelic_number <- ncol(configuration)
     #draw new effect for proposal
     new_effect <- rnorm(n = 1, 
-                        mean = 0, # IS THIS RIGHT??? maybe try mean(trait)??
+                        mean = mean(trait), # IS THIS RIGHT??? maybe try mean(trait)??
                         sd = sqrt(var(trait))
                         ) # check this!!
     effects_proposal <- c(effects, new_effect)
@@ -318,7 +318,11 @@ update_configuration <- function(configuration,
   # determine which alleles have multiple founders
   alleles_with_multiple_founders <- which(colSums(configuration) > 1)
   # randomly choose an allele with multiple founders
-  allele_to_change <- sample(alleles_with_multiple_founders, size = 1)
+  if (length(alleles_with_multiple_founders) > 1) {
+    allele_to_change <- sample(alleles_with_multiple_founders, size = 1)
+  } else {
+    allele_to_change <- alleles_with_multiple_founders
+  }
   # choose a founder with 'allele_to_change' 
   founders_with_allele_to_change <- which(configuration[, allele_to_change] == 1)
   # randomly choose one from 'founders_with_allele_to_change'
