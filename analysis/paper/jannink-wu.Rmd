@@ -323,6 +323,7 @@ update_configuration <- function(configuration,
   founders_with_allele_to_change <- which(configuration[, allele_to_change] == 1)
   # randomly choose one from 'founders_with_allele_to_change'
   founder_to_change <- sample(founders_with_allele_to_change, size = 1)
+  # 
   v_possible_alleles <- (1:ncol(configuration))[- allele_to_change]
   v_allele <- sample(v_possible_alleles, size = 1)
   configuration_proposal <- configuration
@@ -423,7 +424,7 @@ for (i in 1:10000){
   current$configuration <- uc_out$out
   # iterate over effects vector
   ue_outs <- list()
-  for (k in seq_along(effects)){
+  for (k in seq_along(current$effects)){
      ue_outs[[k]] <- update_effect(effects = current$effects, 
                               effect_index = k,
                               trait = tr, 
