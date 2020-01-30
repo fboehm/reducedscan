@@ -172,7 +172,7 @@ calc_prob_allelic_number_decrease <- function(configuration,
   allelic_number <- ncol(configuration)
   founder_number <- nrow(configuration)
     # choose two alleles to combine into one
-  alleles_to_combine <- sample(1:allelic_number, size = 2, replace = FALSE) # vector of length 2
+  alleles_to_combine <- sample(1:allelic_number, size = 2) # vector of length 2
   # make configuration proposal matrix
   configuration_proposal <- calc_configuration_combining_alleles(configuration, alleles_to_combine)
   verify_configuration(configuration_proposal)
@@ -228,7 +228,11 @@ create_wider_configuration <- function(current_configuration){
   allelic_number <- ncol(current_configuration)
   binary <- rep(0, founder_number)
   shared_alleles <- which(colSums(current_configuration) > 1) # numeric vector of length up to 4 (for DO)
-  allele_to_split <- sample(x = shared_alleles, size = 1)
+  if (length(shared_alleles) > 1) {
+    allele_to_split <- sample(x = shared_alleles, size = 1)
+  } else {
+    allele_to_split <- shared_alleles
+  }
   founders_to_split <- which(current_configuration[ , allele_to_split] == 1)
   group_indicators <- sample_partition_into_two(founders_to_split) # vector of 0s and 1s
   binary[founders_to_split[as.logical(group_indicators)]] <- 1
@@ -245,7 +249,11 @@ create_wider_configuration <- function(current_configuration){
 sample_partition_into_two <- function(vector){
   all_partitions <- clue::as.cl_partition(vector)$.Data
   partitions_of_size_two <- all_partitions[, apply(FUN = max, X = all_partitions, MARGIN = 2) == 1]
-  part_out_index <- sample(1:ncol(partitions_of_size_two), size = 1)
+  if (length(partitions_of_size_two) > 1){
+    part_out_index <- sample(1:ncol(partitions_of_size_two), size = 1)
+  } else {
+    part_out_index <- 1
+  }
   return(partitions_of_size_two[, part_out_index])
 }
 
@@ -329,7 +337,11 @@ update_configuration <- function(configuration,
   founder_to_change <- sample(founders_with_allele_to_change, size = 1)
   # 
   v_possible_alleles <- (1:ncol(configuration))[- allele_to_change]
-  v_allele <- sample(v_possible_alleles, size = 1)
+  if (length(v_possible_alleles) > 1){
+    v_allele <- sample(v_possible_alleles, size = 1)
+  } else {
+    v_allele <- v_possible_alleles
+  }
   configuration_proposal <- configuration
   configuration_proposal[founder_to_change, allele_to_change] <- 0 
   configuration_proposal[founder_to_change, v_allele] <- 1
