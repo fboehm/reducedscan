@@ -1,0 +1,57 @@
+---
+title: "Model specification"
+author: "Frederick J. Boehm"
+date: "2/2/2020"
+output: html_document
+params:
+  lastmod: !r lubridate::now()
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+The goal is to infer, for a known QTL position, the allelic series.
+
+
+## Model
+
+$$Y = XCa + \epsilon$$
+
+where Y is a n by 1 vector of trait values, X is a n by 8 matrix of founder allele probabilities for 
+a single marker, C is a 8 by l allelic series configuration matrix, and a is a l-long vector of founder allele effects.
+
+The number of alleles, then, is $l$. $\epsilon$ is a random error term, n-long vector, with distribution:
+
+$$\epsilon \sim N(0, \sigma^2I)$$
+
+The observed quantities are $Y$ and marker founder allele probabilities, $X$. 
+
+Unobserved quantities are $C|l$, $l$, $a$, and $\sigma^2$. 
+
+## Conditional distribution
+
+$$p(C, l, a, \sigma^2 | y, X) \propto p(y | C, l, a, \sigma^2)\pi(C, l)\pi(a)\pi(\sigma^2) \\
+\propto p(y | C, l, a, \sigma^2)\pi(C| l)\pi(l) \pi(a)\pi(\sigma^2)$$
+
+The term $p(y | C, l, a, \sigma^2)$ is the likelihood. $\pi$ specifies a prior for the argument, ie, $\pi(a)$ is the prior distribution for $a$.
+
+We'll use a Metropolis-Hastings algorithm to draw samples from the posterior distribution.
+
+At each step in a single iteration, we condition on current values of the unknowns.
+
+1. update allelic effects $a$
+1. update residual variance $\sigma^2$
+1. update $C | l$
+1. update $l$
+
+
+
+
+
+
+
+
