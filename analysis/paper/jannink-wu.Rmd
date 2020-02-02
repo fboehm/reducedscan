@@ -811,7 +811,76 @@ residual variances near the true value, 1.
 
 I get this even when I start with large-ish values of residual variance, say, 20.
 
+## UPDATE: FEB 2, 2020 @ 13:42
 
+Now, the residual variance DOESNOT get stuck in really really big values!
+
+```{r}
+outs[[10000]]$residual_variance
+```
+I think that the error lay in failure to specify an argument to `propose_configuration`.
+
+
+## UPDATING ALL FOUr QUANTITIES
+
+Here, we now try to update all four quantities: $l$, $C|l$, $a$, and $\sigma^2$.
+
+
+```{r}
+outs <- list()
+current <- list(configuration = config, 
+                effects = c(20, 40), 
+                residual_variance = 2
+                )
+all_outs <- list()
+set.seed(2020-01-27)
+for (i in 1:100000){
+  if (i > 1) current <- outs[[i - 1]] # ok since this is the first step in each iteration.
+  # update allelic number
+  ua_out <- update_allelic_number(configuration = current$configuration, 
+                               genoprobs = geno$`1`[ , , 100], 
+                               effects = current$effects, 
+                               trait = tr, 
+                               residual_variance = current$residual_variance
+                               )
+  current$effects <- ua_out$out[[1]] 
+  current$configuration <- ua_out$out[[2]]
+  #current$effects <- c(-30, 30)
+  #current$configuration <- config
+  # update configuration for fixed allelic number
+  uc_out <- update_configuration(configuration = current$configuration, 
+                                        trait = tr, 
+                                        genoprobs = geno$`1`[ , , 100], 
+                                        effects = current$effects, 
+                                        residual_variance = current$residual_variance
+                                        )
+  current$configuration <- uc_out$out
+  # iterate over effects vector
+  ue_outs <- list()
+  for (k in seq_along(current$effects)){
+     ue_outs[[k]] <- update_effect(effects = current$effects, 
+                              effect_index = k,
+                              trait = tr, 
+                              residual_variance = current$residual_variance,
+                              collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration
+                              )
+    current$effects <- ue_outs[[k]]$out
+  }
+  ##
+  urv_out <- update_residual_variance(residual_variance = current$residual_variance, 
+                                      trait = tr, 
+                                      collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration, 
+                                      effects = current$effects
+                                      )
+  current$residual_variance <- urv_out$out
+  outs[[i]] <- current 
+  all_outs[[i]] <- list(ua_out = ua_out,
+                        uc_out = uc_out,
+                        ue_outs = ue_outs,
+                        urv_out = urv_out
+                        )
+}
+```
 
 
 
