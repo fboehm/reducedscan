@@ -86,7 +86,7 @@ update_effect <- function(effects,
 }
 
 update_residual_variance <- function(residual_variance, 
-                                     distance = 0.3, 
+                                     distance = 0.05, 
                                      trait, 
                                      collapsed_genotypes, 
                                      effects){
@@ -343,7 +343,8 @@ update_configuration <- function(configuration,
     } else {
       v_allele <- v_possible_alleles
     }
-    configuration_proposal <- propose_configuration(configuration, 
+    configuration_proposal <- propose_configuration(configuration,
+                                                    founder_to_change = founder_to_change,
                                                     allele_to_change = allele_to_change, 
                                                     v_allele = v_allele
                                                     )
@@ -374,7 +375,7 @@ update_configuration <- function(configuration,
   return(output)
 }
 # for update_configuration step
-propose_configuration <- function(configuration, allele_to_change, v_allele){
+propose_configuration <- function(configuration, founder_to_change, allele_to_change, v_allele){
   configuration[founder_to_change, allele_to_change] <- 0 
   configuration[founder_to_change, v_allele] <- 1
   verify_configuration(configuration)
@@ -636,19 +637,24 @@ The above suggests that both steps, updating residual variance and updating alle
 
 This raises the question of whether I've waited long enough to get convergence in the full MCMC.
 
-## Updating $C|l$
+## Updating $C|l$ AND allelic effects AND residual variance
 
 Let's now add to the mix the configuration updates for fixed allelic number.
 
 ```{r}
 outs <- list()
+tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], 
+                        allelic_series = config,
+                        allelic_effects = c(-30, 30),
+                        error_variance = 1
+)
 current <- list(configuration = 1 - config, 
                 effects = c(20, 40), 
                 residual_variance = 2
                 )
 all_outs <- list()
 set.seed(2020-01-27)
-for (i in 1:1000000){
+for (i in 1:10000){
   if (i > 1) current <- outs[[i - 1]] # ok since this is the first step in each iteration.
   # update allelic number
   #current$effects <- c(-30, 30)
