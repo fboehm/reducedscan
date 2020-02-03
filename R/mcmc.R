@@ -199,6 +199,8 @@ update_configuration <- function(configuration,
 #' @param genoprobs a genoprobs matrix for QTL
 #' @param trait a univariate trait affected by the QTL
 #' @param residual_variance residual variance in the linear model
+#' @return a list of length two, where each entry is itself a list of results from each iteration
+#' @export
 
 jannink_mcmc <- function(initial_values, niter = 10000){
   outs <- list()
