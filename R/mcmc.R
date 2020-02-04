@@ -10,7 +10,7 @@
 
 update_effect <- function(effects,
                           effect_index, # which element of effects is considered for update
-                          distance = 0.2,
+                          distance = 0.05,
                           trait,
                           residual_variance,
                           collapsed_genotypes){
@@ -198,11 +198,10 @@ update_configuration <- function(configuration,
 #' @param niter number of iterations
 #' @param genoprobs a genoprobs matrix for QTL
 #' @param trait a univariate trait affected by the QTL
-#' @param residual_variance residual variance in the linear model
 #' @return a list of length two, where each entry is itself a list of results from each iteration
 #' @export
 
-jannink_mcmc <- function(initial_values, niter = 10000){
+jannink_mcmc <- function(initial_values, niter = 10000, genoprobs, trait){
   outs <- list()
   current <- initial_values
   all_outs <- list()

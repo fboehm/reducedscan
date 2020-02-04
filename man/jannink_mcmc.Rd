@@ -4,7 +4,7 @@
 \alias{jannink_mcmc}
 \title{Draw samples from a MCMC chain per Jannink & Wu 2003}
 \usage{
-jannink_mcmc(initial_values, niter = 10000)
+jannink_mcmc(initial_values, niter = 10000, genoprobs, trait)
 }
 \arguments{
 \item{initial_values}{a named list of length 3, where names are 'configuration', 'effects', and 'residual_variance'.}
@@ -14,8 +14,6 @@ jannink_mcmc(initial_values, niter = 10000)
 \item{genoprobs}{a genoprobs matrix for QTL}
 
 \item{trait}{a univariate trait affected by the QTL}
-
-\item{residual_variance}{residual variance in the linear model}
 }
 \value{
 a list of length two, where each entry is itself a list of results from each iteration
