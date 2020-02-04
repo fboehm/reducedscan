@@ -42,139 +42,35 @@ geno <- readRDS("../data/derived_data/attie_geno.rds")
 ```
 
 ```{r}
-config <- matrix(nrow = 8, ncol = 2)
-config[, 1] <- rep(c(0, 1), each = 4)
-config[, 2] <- 1 - config[, 1]
-tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-30, 30))
-```
-
-
-
-
-
-## Examining allelic series updates
-
-We consider in detail the updates to allelic configuration (for fixed number) and allelic number.
-
-
-
-
-## Assessing $C|l$ and $l$ update steps
-
-Here, we seek to isolate the two steps that involve allelic number and allelic configuration updates.
-THe other steps are skipped by assigning the true value (from the simulation) 
-to the parameter.
-
-```{r}
-
-```
-
-It looks like only the first element of the effects vector is getting updated. Hmm. 
-
-Follow Geyer's advice to expose write functions that allow for exposing of intermediate outputs. 
-
-So, I need to restructure my mcmc "function" so that I capture the output of every updating function. Note that two 
-distinct steps update the configuration, yet I currently capture only one C matrix per iteration.
-
-
-## February 1, 2020
-
-I see now that the MCMC executes without throwing errors, yet I get few acceptances for the `update_allelic_number` step of the sequence. I then end up with 4 alleles, but pairs of alleles have similar effects. This makes me think that they should be combining, but, for some reason, don't.
-
-I currently get:
-
-```{r}
 library(magrittr)
 ```
-Note also that, aside from the first few values, the chain states never have fewer than 4 alleles.
-
-Why is this?
-
-Why does it appear that the chain favors an allelic number of 4??
-
-## Check `update_residual_variance`
-
-I want to see if I can get the correct residual variance when 
-setting other unknowns to their true values.
 
 ```{r}
 config <- matrix(nrow = 8, ncol = 2)
 config[, 1] <- rep(c(0, 1), each = 4)
 config[, 2] <- 1 - config[, 1]
-set.seed(2020-02-02)
-tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-30, 30))
+tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-3, 3))
+s1_out <- qtl2::scan1(genoprobs = geno, pheno = tr)
+plot(s1_out, map = map, chr = 1)
+peak_index <- qtl2::find_peaks(s1_out, map = map) %>%
+  dplyr::filter(chr == 1) %>%
+  dplyr::select(pos) %>%
+  unlist() %>%
+  (function(x) which(map$`1` == x))
+# get the founder allele effects
+effects <- qtl2::scan1coef(genoprobs = geno[ , 1], pheno = tr) %>%
+  (function(x) qtl2pleio::get_effects(marker_index = peak_index, allele_effects_matrix = x, map = map$`1`))
+
+```
+
+```{r mcmc}
+mcmc_out <- reducedscan::jannink_mcmc(niter = 100000, initial_values = list(configuration = diag(8), effects = effects, residual_variance = 1), genoprobs = geno$`1`[ , , 100], trait = tr)
 ```
 
 
-From the above results, it seems that the updating of residual variance works as intended.
+I'm starting to think that I should add an option to use a truncated poisson prior on the number of alleles. It seems that I routinely get a result with exactly four alleles. I think this is related to the fact that the second Stirling number for 8 is maximized at 4, by a large amount.
 
-## Checking the updating of allelic effects
-
-Let's now run the MCMC with both updating residual variance AND allelic effects, but without changes in configuration.
-
-
-The above suggests that both steps, updating residual variance and updating allele effects, are working properly. However, it is concerning that the burnin (or warmup, to use Gelman's term) is sooo long.
-
-
-This raises the question of whether I've waited long enough to get convergence in the full MCMC.
-
-## Updating $C|l$ AND allelic effects AND residual variance
-
-Let's now add to the mix the configuration updates for fixed allelic number.
-
-
-```{r, eval = FALSE}
-outs %>%
-  sapply(FUN = function(x)x$residual_variance) %>%
-  (function(x)x[-c(1:500000)]) %>%
-  (function(x) x[400 * 1:1250]) %>%
-  plot()
-outs %>%
-  sapply(FUN = function(x)x$effects[1]) %>%
-  (function(x)x[-c(1:500000)]) %>%
-  (function(x) x[400 * 1:1250]) %>%
-  plot()
-outs %>%
-  sapply(FUN = function(x)x$effects[2]) %>%
-  (function(x)x[-c(1:500000)]) %>%
-  (function(x) x[400 * 1:1250]) %>%
-  plot()
-```
-The above suggests that there is a problem. It's hard to say which step is problematic. The effects are nowhere near their true values, and the residual variance is huge.
-
-Could there be a problem in the residual variance update function that is somehow "hidden" when I don't update configuration??
-
-
-
-
-
-I need to look at the acceptance rates for each type of update.
-
-I see that, by 250 iterations, the configuration has reached its final value. That is, matrix $C$ doesn't change after i = 250.
-
-This is puzzling because residual variance continues to be big after 250. But, when I skip the update of configuration in the MCMC cycle, and instead, fix configuration at its true value, I see that I get 
-residual variances near the true value, 1.
-
-I get this even when I start with large-ish values of residual variance, say, 20.
-
-## UPDATE: FEB 2, 2020 @ 13:42
-
-Now, the residual variance DOESNOT get stuck in really really big values!
-
-```{r, eval = FALSE}
-outs[[10000]]$residual_variance
-```
-I think that the error lay in failure to specify an argument to `propose_configuration`.
-
-
-## UPDATING ALL FOUr QUANTITIES
-
-Here, we now try to update all four quantities: $l$, $C|l$, $a$, and $\sigma^2$.
-
-
-```{r}
-```
-
+If I use a poisson prior on the number of alleles, then I'll drive the number of alleles to a smaller value.
 
 
 
