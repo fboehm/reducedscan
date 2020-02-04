@@ -5,7 +5,7 @@ date: "1/19/2020"
 output: html_document
 params:
   lastmod: !r lubridate::now()
-bibliography: references.bib
+bibliography: references.bib  
 ---
 
 Last modified: `r params$lastmod`.
