@@ -10,7 +10,7 @@
 
 update_effect <- function(effects,
                           effect_index, # which element of effects is considered for update
-                          distance = 0.05,
+                          distance = 0.2,
                           trait,
                           residual_variance,
                           collapsed_genotypes){
@@ -87,12 +87,20 @@ update_residual_variance <- function(residual_variance,
 #'
 #' @param configuration an allelic series matrix, ie, binary matrix of 0s and 1s mapping founders to alleles at a single QTL
 #' @param genoprobs genotype probabilities matrix for a single marker, ie, n_subjects by n_founders at 1 marker
+#' @param effects vector containing current value of allelic effects, one entry per allele
+#' @param trait a univariate trait matrix, n by 1
+#' @param residual_variance residual variance
+#' @param prior takes values "poisson" or "uniform" to specify which prior to use.
+#' @param poisson_prior_mean Lambda, mean value, for the untruncated Poisson distribution
+#' @details If a poisson prior is used for the allelic number, it is truncated to 2, 3, ..., number of founders (8 in the case of Diversity Outbred mice).
 
 update_allelic_number <- function(configuration,
                                   genoprobs,
                                   effects,
                                   trait,
-                                  residual_variance){
+                                  residual_variance,
+                                  prior,
+                                  poisson_prior_mean = 2){
   allelic_number <- ncol(configuration)
   founder_number <- nrow(configuration)
   # get proposal
@@ -114,14 +122,18 @@ update_allelic_number <- function(configuration,
                                                 genoprobs,
                                                 effects,
                                                 trait,
-                                                residual_variance
+                                                residual_variance,
+                                                prior,
+                                                poisson_prior_mean
     )
   } else { # propose a decrease in allelic number
     cp_out <- calc_prob_allelic_number_decrease(configuration,
                                                 genoprobs,
                                                 effects,
                                                 trait,
-                                                residual_variance
+                                                residual_variance,
+                                                prior,
+                                                poisson_prior_mean
     )
   }
   output <- get_output(numerator = cp_out$numerator,
@@ -198,10 +210,17 @@ update_configuration <- function(configuration,
 #' @param niter number of iterations
 #' @param genoprobs a genoprobs matrix for QTL
 #' @param trait a univariate trait affected by the QTL
+#' @param allelic_number_prior Takes either of two values, "poisson" or "uniform".
+#' @param poisson_prior_mean lamba, ie, mean, for the untruncated poisson.
 #' @return a list of length two, where each entry is itself a list of results from each iteration
 #' @export
 
-jannink_mcmc <- function(initial_values, niter = 10000, genoprobs, trait){
+jannink_mcmc <- function(initial_values,
+                         niter = 10000,
+                         genoprobs,
+                         trait,
+                         allelic_number_prior = "poisson",
+                         poisson_prior_mean = 2){
   outs <- list()
   current <- initial_values
   all_outs <- list()
@@ -212,7 +231,9 @@ jannink_mcmc <- function(initial_values, niter = 10000, genoprobs, trait){
                                     genoprobs = geno$`1`[ , , 100],
                                     effects = current$effects,
                                     trait = trait,
-                                    residual_variance = current$residual_variance
+                                    residual_variance = current$residual_variance,
+                                    prior = allelic_number_prior,
+                                    poisson_prior_mean = poisson_prior_mean
     )
     current$effects <- ua_out$out[[1]]
     current$configuration <- ua_out$out[[2]]

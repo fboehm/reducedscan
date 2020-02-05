@@ -9,14 +9,29 @@ update_allelic_number(
   genoprobs,
   effects,
   trait,
-  residual_variance
+  residual_variance,
+  prior,
+  poisson_prior_mean = 2
 )
 }
 \arguments{
 \item{configuration}{an allelic series matrix, ie, binary matrix of 0s and 1s mapping founders to alleles at a single QTL}
 
 \item{genoprobs}{genotype probabilities matrix for a single marker, ie, n_subjects by n_founders at 1 marker}
+
+\item{effects}{vector containing current value of allelic effects, one entry per allele}
+
+\item{trait}{a univariate trait matrix, n by 1}
+
+\item{residual_variance}{residual variance}
+
+\item{prior}{takes values "poisson" or "uniform" to specify which prior to use.}
+
+\item{poisson_prior_mean}{Lambda, mean value, for the untruncated Poisson distribution}
 }
 \description{
 Update allelic number (and, of course, configuration, too) in Jannink and Wu 2003 MCMC.
+}
+\details{
+If a poisson prior is used for the allelic number, it is truncated to 2, 3, ..., number of founders (8 in the case of Diversity Outbred mice).
 }

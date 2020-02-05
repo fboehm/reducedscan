@@ -4,7 +4,14 @@
 \alias{jannink_mcmc}
 \title{Draw samples from a MCMC chain per Jannink & Wu 2003}
 \usage{
-jannink_mcmc(initial_values, niter = 10000, genoprobs, trait)
+jannink_mcmc(
+  initial_values,
+  niter = 10000,
+  genoprobs,
+  trait,
+  allelic_number_prior = "poisson",
+  poisson_prior_mean = 2
+)
 }
 \arguments{
 \item{initial_values}{a named list of length 3, where names are 'configuration', 'effects', and 'residual_variance'.}
@@ -14,6 +21,10 @@ jannink_mcmc(initial_values, niter = 10000, genoprobs, trait)
 \item{genoprobs}{a genoprobs matrix for QTL}
 
 \item{trait}{a univariate trait affected by the QTL}
+
+\item{allelic_number_prior}{Takes either of two values, "poisson" or "uniform".}
+
+\item{poisson_prior_mean}{lamba, ie, mean, for the untruncated poisson.}
 }
 \value{
 a list of length two, where each entry is itself a list of results from each iteration

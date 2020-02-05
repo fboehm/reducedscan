@@ -49,8 +49,10 @@ library(magrittr)
 config <- matrix(nrow = 8, ncol = 2)
 config[, 1] <- rep(c(0, 1), each = 4)
 config[, 2] <- 1 - config[, 1]
-tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-3, 3))
+# simulate a trait
+tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-3, 3), error_variance = 1)
 s1_out <- qtl2::scan1(genoprobs = geno, pheno = tr)
+map <- readRDS("../data/derived_data/attie_map.rds")
 plot(s1_out, map = map, chr = 1)
 peak_index <- qtl2::find_peaks(s1_out, map = map) %>%
   dplyr::filter(chr == 1) %>%
@@ -64,7 +66,23 @@ effects <- qtl2::scan1coef(genoprobs = geno[ , 1], pheno = tr) %>%
 ```
 
 ```{r mcmc}
-mcmc_out <- reducedscan::jannink_mcmc(niter = 100000, initial_values = list(configuration = diag(8), effects = effects, residual_variance = 1), genoprobs = geno$`1`[ , , 100], trait = tr)
+set.seed(2020-02-04)
+mcmc_out_poisson2 <- reducedscan::jannink_mcmc(niter = 10000, 
+                                      initial_values = list(configuration = diag(8), 
+                                                            effects = effects, 
+                                                            residual_variance = 1), 
+                                      genoprobs = geno$`1`[ , , 100], 
+                                      trait = tr, 
+                                      allelic_number_prior = "poisson", 
+                                      poisson_prior_mean = 2)
+mcmc_out_uniform <- reducedscan::jannink_mcmc(niter = 10000, 
+                                      initial_values = list(configuration = diag(8), 
+                                                            effects = effects, 
+                                                            residual_variance = 1), 
+                                      genoprobs = geno$`1`[ , , 100], 
+                                      trait = tr, 
+                                      allelic_number_prior = "uniform", 
+                                      poisson_prior_mean = 2)
 ```
 
 

@@ -18,7 +18,9 @@ calc_prob_allelic_number_decrease <- function(configuration,
                                               genoprobs,
                                               effects,
                                               trait,
-                                              residual_variance){
+                                              residual_variance,
+                                              prior,
+                                              poisson_prior_mean){
   # propose a decrease in allelic number
   allelic_number <- ncol(configuration)
   founder_number <- nrow(configuration)
@@ -55,6 +57,11 @@ calc_prob_allelic_number_decrease <- function(configuration,
           sd = sqrt(residual_variance),
           log = TRUE
     )
+  if (prior == "poisson"){
+    numerator <- numerator + log(allelic_number)
+    denominator <- denominator + log(poisson_prior_mean)
+  }
+
   return(list(numerator = numerator,
               denominator = denominator,
               configuration_proposal = configuration_proposal,
@@ -112,7 +119,9 @@ calc_prob_allelic_number_increase <- function(configuration,
                                               genoprobs,
                                               effects,
                                               trait,
-                                              residual_variance){
+                                              residual_variance,
+                                              prior,
+                                              poisson_prior_mean){
   cwc <- create_wider_configuration(configuration)
   configuration_proposal <- cwc$configuration
   allele_to_split <- cwc$allele_to_split
@@ -129,12 +138,11 @@ calc_prob_allelic_number_increase <- function(configuration,
   # collapse genoprobs in each of two ways
   collapsed_genotypes <- genoprobs %*% configuration
   collapsed_genotypes_proposal <- genoprobs %*% configuration_proposal
-
   numerator <- log(2 * (2 ^ (eta_u - 1) - 1)) +
     log(sum(colSums(configuration) > 1)) +
     log(count_configurations(founder_number = founder_number,
                              allelic_number = allelic_number
-    )) +
+                             )) +
     dnorm(trait,
           mean = collapsed_genotypes_proposal %*% effects_proposal,
           sd = sqrt(residual_variance),
@@ -151,6 +159,10 @@ calc_prob_allelic_number_increase <- function(configuration,
           sd = sqrt(residual_variance),
           log = TRUE
     )
+  if (prior == "poisson"){
+    numerator <- numerator + log(poisson_prior_mean)
+    denominator <- denominator + log(1 + allelic_number)
+    }
   return(list(numerator = numerator,
               denominator = denominator,
               configuration_proposal = configuration_proposal,
