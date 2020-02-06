@@ -50,7 +50,7 @@ config <- matrix(nrow = 8, ncol = 2)
 config[, 1] <- rep(c(0, 1), each = 4)
 config[, 2] <- 1 - config[, 1]
 # simulate a trait
-tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-3, 3), error_variance = 1)
+tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-30, 30), error_variance = 1)
 s1_out <- qtl2::scan1(genoprobs = geno, pheno = tr)
 map <- readRDS("../data/derived_data/attie_map.rds")
 plot(s1_out, map = map, chr = 1)
