@@ -6,7 +6,7 @@
 \usage{
 update_residual_variance(
   residual_variance,
-  distance = 0.05,
+  distance = 0.2,
   trait,
   collapsed_genotypes,
   effects

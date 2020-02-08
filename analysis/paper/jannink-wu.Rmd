@@ -50,7 +50,7 @@ config <- matrix(nrow = 8, ncol = 2)
 config[, 1] <- rep(c(0, 1), each = 4)
 config[, 2] <- 1 - config[, 1]
 # simulate a trait
-tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-30, 30), error_variance = 1)
+tr <- reducedscan::sim1(aprobs = geno$`1`[ , , 100], allelic_series = config, allelic_effects = c(-10, 10), error_variance = 1)
 s1_out <- qtl2::scan1(genoprobs = geno, pheno = tr)
 map <- readRDS("../data/derived_data/attie_map.rds")
 plot(s1_out, map = map, chr = 1)
@@ -60,7 +60,9 @@ peak_index <- qtl2::find_peaks(s1_out, map = map) %>%
   unlist() %>%
   (function(x) which(map$`1` == x))
 # get the founder allele effects
-effects <- qtl2::scan1coef(genoprobs = geno[ , 1], pheno = tr) %>%
+s1c_out <- qtl2::scan1coef(genoprobs = geno[ , 1], pheno = tr)
+qtl2::plot_coefCC(s1c_out, map)
+effects <- s1c_out %>%
   (function(x) qtl2pleio::get_effects(marker_index = peak_index, allele_effects_matrix = x, map = map$`1`))
 
 ```
@@ -75,6 +77,25 @@ mcmc_out_poisson2 <- reducedscan::jannink_mcmc(niter = 10000,
                                       trait = tr, 
                                       allelic_number_prior = "poisson", 
                                       poisson_prior_mean = 2)
+mcmc_out_poisson2_rv <- reducedscan::jannink_mcmc_rv_only(niter = 10000, 
+                                      initial_values = list(configuration = config, 
+                                                            effects = c(-10, 10), 
+                                                            residual_variance = 10), 
+                                      genoprobs = geno$`1`[ , , 100], 
+                                      trait = tr, 
+                                      allelic_number_prior = "poisson", 
+                                      poisson_prior_mean = 2)
+mcmc_out_poisson2_rv_fx <- reducedscan::jannink_mcmc_rv_fx_only(niter = 10000, 
+                                      initial_values = list(configuration = config, 
+                                                            effects = c(-10, 10), 
+                                                            residual_variance = 3), 
+                                      genoprobs = geno$`1`[ , , 100], 
+                                      trait = tr, 
+                                      allelic_number_prior = "poisson", 
+                                      poisson_prior_mean = 2)
+
+
+
 mcmc_out_uniform <- reducedscan::jannink_mcmc(niter = 10000, 
                                       initial_values = list(configuration = diag(8), 
                                                             effects = effects, 
@@ -83,12 +104,35 @@ mcmc_out_uniform <- reducedscan::jannink_mcmc(niter = 10000,
                                       trait = tr, 
                                       allelic_number_prior = "uniform", 
                                       poisson_prior_mean = 2)
+mcmc_out_poisson3 <- reducedscan::jannink_mcmc(niter = 10000, 
+                                      initial_values = list(configuration = diag(8), 
+                                                            effects = effects, 
+                                                            residual_variance = 1), 
+                                      genoprobs = geno$`1`[ , , 100], 
+                                      trait = tr, 
+                                      allelic_number_prior = "poisson", 
+                                      poisson_prior_mean = 3)
+```
+
+```{r}
+
+
 ```
 
 
-I'm starting to think that I should add an option to use a truncated poisson prior on the number of alleles. It seems that I routinely get a result with exactly four alleles. I think this is related to the fact that the second Stirling number for 8 is maximized at 4, by a large amount.
+## Open questions about the inferences
 
-If I use a poisson prior on the number of alleles, then I'll drive the number of alleles to a smaller value.
+1. Role of starting values
+  1. residual variance
+  1. configuration
+  1. allelic number
+  1. effects
+1. Role of true effects
+1. Role of poisson prior mean hyperparameter
+1. How do mistaken inferences in configuration affect statistical power in QTL scans?
+  1. Too many alleles, but otherwise reasonable groupings of founders
+  1. Too few alleles
+  1. Too many alleles and unreasonable groupings of founders
+  
 
-
-
+  
