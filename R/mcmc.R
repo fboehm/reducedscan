@@ -225,22 +225,21 @@ jannink_mcmc <- function(initial_values,
   current <- initial_values
   all_outs <- list()
   for (i in 1:niter){
-    if (i > 1) current <- outs[[i - 1]] # ok since this is the first step in each iteration.
     # update allelic number
     ua_out <- update_allelic_number(configuration = current$configuration,
-                                    genoprobs = geno$`1`[ , , 100],
+                                    genoprobs = genoprobs,
                                     effects = current$effects,
                                     trait = trait,
                                     residual_variance = current$residual_variance,
                                     prior = allelic_number_prior,
                                     poisson_prior_mean = poisson_prior_mean
     )
-    current$effects <- ua_out$out[[1]]
-    current$configuration <- ua_out$out[[2]]
+    current$effects <- ua_out$out$effects
+    current$configuration <- ua_out$out$configuration
     # update configuration for fixed allelic number
     uc_out <- update_configuration(configuration = current$configuration,
                                    trait = trait,
-                                   genoprobs = geno$`1`[ , , 100],
+                                   genoprobs = genoprobs,
                                    effects = current$effects,
                                    residual_variance = current$residual_variance
     )
@@ -252,14 +251,14 @@ jannink_mcmc <- function(initial_values,
                                     effect_index = k,
                                     trait = trait,
                                     residual_variance = current$residual_variance,
-                                    collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration
+                                    collapsed_genotypes = genoprobs %*% current$configuration
       )
       current$effects <- ue_outs[[k]]$out
     }
     ##
     urv_out <- update_residual_variance(residual_variance = current$residual_variance,
                                         trait = trait,
-                                        collapsed_genotypes = geno$`1`[ , , 100] %*% current$configuration,
+                                        collapsed_genotypes = genoprobs %*% current$configuration,
                                         effects = current$effects
     )
     current$residual_variance <- urv_out$out
