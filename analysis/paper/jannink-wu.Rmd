@@ -124,6 +124,7 @@ I'll try simulating a collection of traits. I hold constant the configuration am
 tr30 <- reducedscan::sim1(aprobs = geno$`1`[, , 1000], allelic_series = config, allelic_effects = c(-30, 30), error_variance = 1)
 tr20 <- reducedscan::sim1(aprobs = geno$`1`[, , 1000], allelic_series = config, allelic_effects = c(-20, 20), error_variance = 1)
 tr10 <- reducedscan::sim1(aprobs = geno$`1`[, , 1000], allelic_series = config, allelic_effects = c(-10, 10), error_variance = 1)
+tr3 <- reducedscan::sim1(aprobs = geno$`1`[, , 1000], allelic_series = config, allelic_effects = c(-3, 3), error_variance = 1)
 
 ```
 
@@ -155,6 +156,15 @@ out10 <- reducedscan::jannink_mcmc(niter = 10000,
                                       trait = tr10, 
                                       allelic_number_prior = "poisson", 
                                       poisson_prior_mean = 2)
+out3 <- reducedscan::jannink_mcmc(niter = 10000, 
+                                      initial_values = list(configuration = config, 
+                                                            effects = c(-10, 10), 
+                                                            residual_variance = 1), 
+                                      genoprobs = geno$`1`[ , , 1000], 
+                                      trait = tr3, 
+                                      allelic_number_prior = "poisson", 
+                                      poisson_prior_mean = 2)
+
 ```
 
 ## Open questions about the inferences
