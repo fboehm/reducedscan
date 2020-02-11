@@ -129,29 +129,29 @@ tr10 <- reducedscan::sim1(aprobs = geno$`1`[, , 1000], allelic_series = config, 
 
 ```{r}
 set.seed(2020-02-10)
-out30 <- reducedscan::jannink_mcmc(niter = 100000, 
+out30 <- reducedscan::jannink_mcmc(niter = 10000, 
                                       initial_values = list(configuration = config, 
                                                             effects = c(-10, 10), 
                                                             residual_variance = 1), 
-                                      genoprobs = geno$`1`[ , , 100], 
+                                      genoprobs = geno$`1`[ , , 1000], 
                                       trait = tr30, 
                                       allelic_number_prior = "poisson", 
                                       poisson_prior_mean = 2)
 set.seed(2020-02-10)
-out20 <- reducedscan::jannink_mcmc(niter = 100000, 
+out20 <- reducedscan::jannink_mcmc(niter = 10000, 
                                       initial_values = list(configuration = config, 
                                                             effects = c(-10, 10), 
                                                             residual_variance = 1), 
-                                      genoprobs = geno$`1`[ , , 100], 
+                                      genoprobs = geno$`1`[ , , 1000], 
                                       trait = tr20, 
                                       allelic_number_prior = "poisson", 
                                       poisson_prior_mean = 2)
 set.seed(2020-02-10)
-out10 <- reducedscan::jannink_mcmc(niter = 100000, 
+out10 <- reducedscan::jannink_mcmc(niter = 10000, 
                                       initial_values = list(configuration = config, 
                                                             effects = c(-10, 10), 
                                                             residual_variance = 1), 
-                                      genoprobs = geno$`1`[ , , 100], 
+                                      genoprobs = geno$`1`[ , , 1000], 
                                       trait = tr10, 
                                       allelic_number_prior = "poisson", 
                                       poisson_prior_mean = 2)
