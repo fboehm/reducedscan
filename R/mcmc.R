@@ -234,8 +234,8 @@ jannink_mcmc <- function(initial_values,
                                     prior = allelic_number_prior,
                                     poisson_prior_mean = poisson_prior_mean
     )
-    current$effects <- ua_out$out[[1]]
-    current$configuration <- ua_out$out[[2]]
+    current$effects <- ua_out$out$effects
+    current$configuration <- ua_out$out$configuration
     # update configuration for fixed allelic number
     uc_out <- update_configuration(configuration = current$configuration,
                                    trait = trait,
