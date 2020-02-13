@@ -10,7 +10,7 @@ bibliography: references.bib
 
 Last modified: `r params$lastmod`.
 
-IN the terminology of @jannink2003estimating, the sequence of updates per iteration is:
+IN the notation of @jannink2003estimating, the sequence of updates per iteration is:
 
 1. update QTL inheritance matrix $Q$  
 1. update QTL allelic effects $a$  
