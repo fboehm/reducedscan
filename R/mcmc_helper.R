@@ -25,7 +25,7 @@ calc_prob_allelic_number_decrease <- function(configuration,
   allelic_number <- ncol(configuration)
   founder_number <- nrow(configuration)
   # choose two alleles to combine into one
-  alleles_to_combine <- sample(1:allelic_number, size = 2) # vector of length 2
+  alleles_to_combine <- sample(1:allelic_number, size = 2, replace = FALSE) # vector of length 2
   # make configuration proposal matrix
   configuration_proposal <- calc_configuration_combining_alleles(configuration, alleles_to_combine)
   verify_configuration(configuration_proposal)

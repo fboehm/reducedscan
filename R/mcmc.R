@@ -221,6 +221,7 @@ jannink_mcmc <- function(initial_values,
                          trait,
                          allelic_number_prior = "poisson",
                          poisson_prior_mean = 2){
+  # check for missing trait values
   outs <- list()
   current <- initial_values
   all_outs <- list()
@@ -273,4 +274,62 @@ jannink_mcmc <- function(initial_values,
   return(list(outs = outs, all_outs = all_outs))
 }
 
-
+# function that updates only the residual variance
+jannink_mcmc_rv_only <- function(initial_values,
+                         niter = 10000,
+                         genoprobs,
+                         trait,
+                         allelic_number_prior = "poisson",
+                         poisson_prior_mean = 2){
+  # check for missing trait values
+  outs <- list()
+  current <- initial_values
+  all_outs <- list()
+  for (i in 1:niter){
+    if (i > 1) current <- outs[[i - 1]] # ok since this is the first step in each iteration.
+    # update allelic number
+    ua_out <- update_allelic_number(configuration = current$configuration,
+                                    genoprobs = genoprobs,
+                                    effects = current$effects,
+                                    trait = trait,
+                                    residual_variance = current$residual_variance,
+                                    prior = allelic_number_prior,
+                                    poisson_prior_mean = poisson_prior_mean
+    )
+    current$effects <- ua_out$out[[1]]
+    current$configuration <- ua_out$out[[2]]
+    # update configuration for fixed allelic number
+    uc_out <- update_configuration(configuration = current$configuration,
+                                   trait = trait,
+                                   genoprobs = genoprobs,
+                                   effects = current$effects,
+                                   residual_variance = current$residual_variance
+    )
+    current$configuration <- uc_out$out
+    # iterate over effects vector
+    ue_outs <- list()
+    for (k in seq_along(current$effects)){
+      ue_outs[[k]] <- update_effect(effects = current$effects,
+                                    effect_index = k,
+                                    trait = trait,
+                                    residual_variance = current$residual_variance,
+                                    collapsed_genotypes = genoprobs %*% current$configuration
+      )
+      current$effects <- ue_outs[[k]]$out
+    }
+    ##
+    urv_out <- update_residual_variance(residual_variance = current$residual_variance,
+                                        trait = trait,
+                                        collapsed_genotypes = genoprobs %*% current$configuration,
+                                        effects = current$effects
+    )
+    current$residual_variance <- urv_out$out
+    outs[[i]] <- current
+    all_outs[[i]] <- list(ua_out = ua_out,
+                          uc_out = uc_out,
+                          ue_outs = ue_outs,
+                          urv_out = urv_out
+    )
+  }
+  return(list(outs = outs, all_outs = all_outs))
+}
