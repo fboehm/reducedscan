@@ -7,7 +7,7 @@
 update_effect(
   effects,
   effect_index,
-  distance = 1,
+  distance = 0.2,
   trait,
   residual_variance,
   collapsed_genotypes
