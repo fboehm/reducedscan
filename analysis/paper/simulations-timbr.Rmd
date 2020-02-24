@@ -1,0 +1,18 @@
+---
+title: "Simulated traits with TIMBR"
+author: "Frederick J. Boehm"
+date: "2/22/2020"
+output: html_document
+---
+
+We use the `prior.M` object that, per Wes Crouse, puts 5% prior weight on there being a single allele. 
+
+```{r}
+prior.M <- list(model.type = "crp",
+                prior.alpha.type = "gamma",
+                prior.alpha.shape = 2.3009322,
+                prior.alpha.rate = 0.7488104)
+
+TIMBR::TIMBR()
+```
+
