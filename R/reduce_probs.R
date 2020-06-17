@@ -22,7 +22,9 @@ reduce_probs <- function(probs, allelic_series){
 #' @details The function multiplies every marker's probs matrix (from array inputted) by allelic_series and returns an array.
 #' @export
 reduce_probs_array <- function(array, allelic_series){
-  out <- array(dim = c(dim(array)[[1]], ncol(allelic_series), dim(array)[[3]]))
+  out <- array(dim = c(dim(array)[[1]],
+                       ncol(allelic_series),
+                       dim(array)[[3]]))
   for (i in seq_along(1:(dim(array)[[3]]))){
     out[ , , i] <- array[ , , i] %*% allelic_series
   }
