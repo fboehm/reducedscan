@@ -29,6 +29,7 @@ reduce_probs_array <- function(array, allelic_series){
     out[ , , i] <- array[ , , i] %*% allelic_series
   }
   rownames(out) <- rownames(array)
+  colnames(out) <- paste0("allele", 1:ncol(out))
   dimnames(out)[[3]] <- dimnames(array)[[3]]
   return(out)
 }
