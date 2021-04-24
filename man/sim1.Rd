@@ -11,7 +11,7 @@ sim1(aprobs, allelic_series, allelic_effects, error_variance = 1)
 
 \item{allelic_series}{a binary matrix of 0s and 1s indicating the allelic series}
 
-\item{allelic_effects}{a vector of effects for the alleles}
+\item{allelic_effects}{a vector of effects for the functional alleles}
 
 \item{error_variance}{error variance for the traits}
 }
