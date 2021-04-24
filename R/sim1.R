@@ -8,5 +8,5 @@
 #' @return a vector of values for a single trait
 
 sim1 <- function(aprobs, allelic_series, allelic_effects, error_variance = 1){
-  return(aprobs %*% allelic_series %*% allelic_effects + rnorm(n = nrow(aprobs), sd = sqrt(error_variance)))
+  return(aprobs %*% allelic_series %*% allelic_effects + stats::rnorm(n = nrow(aprobs), sd = sqrt(error_variance)))
 }
